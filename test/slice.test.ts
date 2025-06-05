@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.slice()', () => {
 	describe('array', () => {
@@ -132,6 +132,11 @@ describe('.slice()', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.slice(3, 2).asArray).toEqual([]);
 		});
+
+		it('should return a transformed iterable with mixed async and sync values', async () => {
+			const iter = new ExtendedIterable(createMixedAsyncIterableObject(), item => item * 2);
+			expect(await iter.slice(1, 3).asArray).toEqual([2, 4]);
+		});
 	});
 
 	describe('generator function', () => {
@@ -185,6 +190,11 @@ describe('.slice()', () => {
 		it('should return an empty iterable if start is greater than the end', () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			expect(iter.slice(3, 2).asArray).toEqual([]);
+		});
+
+		it('should return an empty iterable if start is greater than iterable length', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.slice(5).asArray).toEqual([]);
 		});
 	});
 });

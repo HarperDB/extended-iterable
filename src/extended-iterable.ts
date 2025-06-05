@@ -758,7 +758,7 @@ export class ExtendedIterable<T> {
 	 * const mapped = iterator.mapError(error => new Error('Error: ' + error.message));
 	 * ```
 	 */
-	mapError(catchCallback?: (error: Error) => Error): ExtendedIterable<T | Error> {
+	mapError(catchCallback?: (error: Error | unknown) => Error | unknown): ExtendedIterable<T | Error> {
 		if (catchCallback && typeof catchCallback !== 'function') {
 			throw new TypeError('Callback is not a function');
 		}
@@ -786,9 +786,9 @@ export class ExtendedIterable<T> {
 						value,
 						done: false
 					};
-				} catch (error) {
+				} catch (error: unknown) {
 					// handle sync errors - return error as value and continue on next call
-					const err = catchCallback ? catchCallback(error instanceof Error ? error : new Error(String(error))) : error;
+					const err = catchCallback ? catchCallback(error) : error;
 					return {
 						value: err as any,
 						done: false
@@ -812,7 +812,7 @@ export class ExtendedIterable<T> {
 					};
 				} catch (error) {
 					// handle async errors - return error as value
-					const err = catchCallback ? catchCallback(error instanceof Error ? error : new Error(String(error))) : error;
+					const err = catchCallback ? catchCallback(error) : error;
 					return {
 						value: err as any,
 						done: false
@@ -1101,6 +1101,8 @@ export class ExtendedIterable<T> {
 		let result = iterator.next();
 		let index = 0;
 
+		console.log('result', result);
+
 		// if first result is a promise, we know this is async
 		if (result instanceof Promise) {
 			return this.#asyncSome(result, callback, index);
@@ -1108,11 +1110,14 @@ export class ExtendedIterable<T> {
 
 		// sync path
 		while (!result.done) {
+			console.log('transformer', transformer);
 			const value = transformer ? transformer(result.value) : result.value;
 			if (callback(value, index++)) {
+				console.log('true');
 				return true;
 			}
 			result = iterator.next() as IteratorResult<T>;
+			console.log('result', result);
 
 			// if we encounter a Promise mid-iteration, switch to async
 			if (result instanceof Promise) {

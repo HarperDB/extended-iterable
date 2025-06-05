@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.some()', () => {
 	describe('array', () => {
@@ -12,6 +12,16 @@ describe('.some()', () => {
 		it('should return false if none of the items satisfy the callback', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(iter.some(item => item > 4)).toBe(false);
+		});
+
+		it('should return true if some items satisfy the callback with a transformer', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
+			expect(iter.some(item => item % 2 === 0)).toBe(true);
+		});
+
+		it('should return false if none of the items satisfy the callback with a transformer', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
+			expect(iter.some(item => item > 10)).toBe(false);
 		});
 
 		it('should return false if the iterable is empty', () => {
@@ -56,6 +66,11 @@ describe('.some()', () => {
 		it('should return false if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.some(item => item < 5)).toBe(false);
+		});
+
+		it('should return a transformed iterable with mixed async and sync values', async () => {
+			const iter = new ExtendedIterable(createMixedAsyncIterableObject(), item => item * 2);
+			expect(await iter.some(item => item > 0 && item % 2 === 0)).toBe(true);
 		});
 	});
 
