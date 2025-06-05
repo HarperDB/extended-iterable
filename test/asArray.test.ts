@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterable } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
 
 describe('.asArray', () => {
 	describe('array', () => {
@@ -39,13 +39,18 @@ describe('.asArray', () => {
 
 	describe('iterable object', () => {
 		it('should return an array from an iterable object', () => {
-			const iterator = new ExtendedIterable(createIterable());
+			const iterator = new ExtendedIterable(createIterableObject());
 			expect(iterator.asArray).toEqual([0, 1, 2, 3]);
 		});
 
 		it('should return a transformed array from an iterable object', () => {
-			const iter = new ExtendedIterable(createIterable(), (value) => value * 2);
+			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
 			expect(iter.asArray).toEqual([0, 2, 4, 6]);
+		});
+
+		it('should return an empty array if the iterable object is empty', () => {
+			const iterator = new ExtendedIterable(createEmptyIterableObject());
+			expect(iterator.asArray).toEqual([]);
 		});
 	});
 

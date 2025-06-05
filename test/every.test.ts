@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterable } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject } from './lib/util.js';
 
 describe('.every()', () => {
 	describe('array', () => {
@@ -17,6 +17,11 @@ describe('.every()', () => {
 		it('should return true if the iterable is empty', () => {
 			const iter = new ExtendedIterable([]);
 			expect(iter.every(item => item < 5)).toBe(true);
+		});
+
+		it('should throw an error if the callback is not a function', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4]);
+			expect(() => iter.every('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
 		});
 	});
 
@@ -39,12 +44,12 @@ describe('.every()', () => {
 
 	describe('iterable object', () => {
 		it('should return true if all items satisfy the callback', () => {
-			const iter = new ExtendedIterable(createIterable());
+			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.every(item => item < 5)).toBe(true);
 		});
 
 		it('should return false if any item does not satisfy the callback', () => {
-			const iter = new ExtendedIterable(createIterable());
+			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.every(item => item < 2)).toBe(false);
 		});
 	});

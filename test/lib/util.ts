@@ -30,7 +30,7 @@ export async function* simpleAsyncGenerator() {
  *
  * @returns The iterable object.
  */
-export function createIterable(): Iterator<number> & { index: number } {
+export function createIterableObject(): Iterator<number> & { index: number } {
 	return {
 		index: 0,
 		next() {
@@ -45,6 +45,19 @@ export function createIterable(): Iterator<number> & { index: number } {
 				value: this.index++,
 				done: false
 			};
+		}
+	};
+}
+
+/**
+ * Creates an empty iterable object.
+ *
+ * @returns The empty iterable object.
+ */
+export function createEmptyIterableObject(): Iterator<number> {
+	return {
+		next() {
+			return { done: true, value: undefined };
 		}
 	};
 }

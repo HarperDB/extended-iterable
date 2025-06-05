@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterable } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
 
 describe('.concat()', () => {
 	describe('array', () => {
@@ -22,6 +22,11 @@ describe('.concat()', () => {
 		it('should concatenate an empty array and a non-empty array', () => {
 			const iter = new ExtendedIterable<number>([]);
 			expect(iter.concat([1, 2, 3]).asArray).toEqual([1, 2, 3]);
+		});
+
+		it('should error if the source is not iterable-like', () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(() => iter.concat(null as any)).toThrowError(new TypeError('Argument is not iterable'));
 		});
 	});
 
@@ -49,13 +54,18 @@ describe('.concat()', () => {
 
 	describe('iterable object', () => {
 		it('should concatenate two iterable objects', () => {
-			const iter = new ExtendedIterable(createIterable());
-			expect(iter.concat(createIterable()).asArray).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
+			const iter = new ExtendedIterable(createIterableObject());
+			expect(iter.concat(createIterableObject()).asArray).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
 		});
 
 		it('should concatenate two iterable objects with a transformer', () => {
-			const iter = new ExtendedIterable(createIterable(), (value) => value * 2);
-			expect(iter.concat(createIterable()).asArray).toEqual([0, 2, 4, 6, 0, 1, 2, 3]);
+			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
+			expect(iter.concat(createIterableObject()).asArray).toEqual([0, 2, 4, 6, 0, 1, 2, 3]);
+		});
+
+		it('should concatenate an empty iterable object and a non-empty iterable object', () => {
+			const iter = new ExtendedIterable(createEmptyIterableObject());
+			expect(iter.concat(createIterableObject()).asArray).toEqual([0, 1, 2, 3]);
 		});
 	});
 
@@ -77,7 +87,7 @@ describe('.concat()', () => {
 
 		it('should concatenate a generator function and an iterable object', () => {
 			const iter = new ExtendedIterable<number>(simpleGenerator);
-			expect(iter.concat(createIterable()).asArray).toEqual([1, 2, 3, 0, 1, 2, 3]);
+			expect(iter.concat(createIterableObject()).asArray).toEqual([1, 2, 3, 0, 1, 2, 3]);
 		});
 
 		it('should transform a generator function and concatenate it with a generator function', () => {
@@ -104,7 +114,7 @@ describe('.concat()', () => {
 
 		it('should concatenate an async generator function and an iterable object', async () => {
 			const iter = new ExtendedIterable<number>(simpleAsyncGenerator);
-			expect(await iter.concat(createIterable()).asArray).toEqual([1, 2, 3, 0, 1, 2, 3]);
+			expect(await iter.concat(createIterableObject()).asArray).toEqual([1, 2, 3, 0, 1, 2, 3]);
 		});
 
 		it('should transform an async generator function and concatenate it with an async generator function', async () => {

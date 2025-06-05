@@ -4,9 +4,9 @@ import { simpleAsyncGenerator } from './lib/util.js';
 
 describe('ExtendedIterable', () => {
 	it('should error if the iterator is invalid', () => {
-		expect(() => new ExtendedIterable(undefined as any)).toThrowError(new TypeError('Invalid iterator'));
-		expect(() => new ExtendedIterable(123 as any)).toThrowError(new TypeError('Invalid iterator'));
-		expect(() => new ExtendedIterable({} as any)).toThrowError(new TypeError('Invalid iterator'));
+		expect(() => new ExtendedIterable(undefined as any)).toThrowError(new TypeError('Argument is not iterable'));
+		expect(() => new ExtendedIterable(123 as any)).toThrowError(new TypeError('Argument is not iterable'));
+		expect(() => new ExtendedIterable({} as any)).toThrowError(new TypeError('Argument is not iterable'));
 	});
 
 	it('should error if the transformer is not a function', () => {

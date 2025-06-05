@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterable } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject } from './lib/util.js';
 
 describe('.at()', () => {
 	describe('array', () => {
@@ -17,6 +17,16 @@ describe('.at()', () => {
 		it('should return undefined if index out of range', () => {
 			const iter = new ExtendedIterable([]);
 			expect(iter.at(2)).toBeUndefined;
+		});
+
+		it('should throw an error if the index is not a number', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4]);
+			expect(() => iter.at('foo' as any)).toThrowError(new TypeError('index is not a number'));
+		});
+
+		it('should throw an error if the index is negative', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4]);
+			expect(() => iter.at(-1)).toThrowError(new RangeError('index must be a positive number'));
 		});
 	});
 
@@ -39,17 +49,17 @@ describe('.at()', () => {
 
 	describe('iterable object', () => {
 		it('should return an item at a specific index from an iterable object', () => {
-			const iter = new ExtendedIterable(createIterable());
+			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.at(2)).toEqual(2);
 		});
 
 		it('should return a transformed item at a specific index from an iterable object', () => {
-			const iter = new ExtendedIterable(createIterable(), (value) => value * 2);
+			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
 			expect(iter.at(2)).toEqual(4);
 		});
 
 		it('should return undefined if index out of range from an iterable object', () => {
-			const iter = new ExtendedIterable(createIterable());
+			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.at(4)).toBeUndefined;
 		});
 	});
