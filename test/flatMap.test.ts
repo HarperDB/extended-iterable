@@ -79,6 +79,15 @@ describe('.flatMap()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.flatMap(item => [item, item])) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 1, 2, 2, 3, 3]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -90,6 +99,15 @@ describe('.flatMap()', () => {
 		it('should return a flattened iterable with a transformer', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.flatMap(item => [item, item])) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 1, 2, 2, 3, 3]);
 		});
 	});
 });

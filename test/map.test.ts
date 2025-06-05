@@ -69,6 +69,15 @@ describe('.map()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.map(item => item * 2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, 4, 6]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -80,6 +89,15 @@ describe('.map()', () => {
 		it('should return a mapped iterable with a transformer', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.map(item => item * 2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, 4, 6]);
 		});
 	});
 });

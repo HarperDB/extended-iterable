@@ -95,9 +95,23 @@ describe('.concat()', () => {
 			expect(iter.concat(createIterableObject()).asArray).toEqual([1, 2, 3, 0, 1, 2, 3]);
 		});
 
+		it('should concatenate a generator function and an empty iterable object', () => {
+			const iter = new ExtendedIterable<number>(simpleGenerator);
+			expect(iter.concat(createEmptyIterableObject()).asArray).toEqual([1, 2, 3]);
+		});
+
 		it('should transform a generator function and concatenate it with a generator function', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.concat(simpleGenerator).asArray).toEqual([2, 4, 6, 1, 2, 3]);
+		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.concat(simpleGenerator)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2, 3, 1, 2, 3]);
 		});
 	});
 
@@ -125,6 +139,15 @@ describe('.concat()', () => {
 		it('should transform an async generator function and concatenate it with an async generator function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.concat(simpleAsyncGenerator).asArray).toEqual([2, 4, 6, 1, 2, 3]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.concat(simpleAsyncGenerator)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2, 3, 1, 2, 3]);
 		});
 	});
 });

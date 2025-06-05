@@ -84,6 +84,15 @@ describe('.drop()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.drop(2).asArray).toEqual([6]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.drop(2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([3]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -95,6 +104,15 @@ describe('.drop()', () => {
 		it('should return a transformed item at a specific index from an async generator function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.drop(2).asArray).toEqual([6]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.drop(2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([3]);
 		});
 	});
 });

@@ -164,6 +164,15 @@ describe('.slice()', () => {
 			const iter = new ExtendedIterable(simpleGenerator);
 			expect(iter.slice(3, 2).asArray).toEqual([]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.slice(1, 3)) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, 3]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -195,6 +204,15 @@ describe('.slice()', () => {
 		it('should return an empty iterable if start is greater than iterable length', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			expect(await iter.slice(5).asArray).toEqual([]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.slice(1, 3)) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, 3]);
 		});
 	});
 });

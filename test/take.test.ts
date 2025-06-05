@@ -94,6 +94,15 @@ describe('.take()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.take(2).asArray).toEqual([2, 4]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.take(2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -110,6 +119,15 @@ describe('.take()', () => {
 		it('should return a transformed iterable with the first `limit` items', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.take(2).asArray).toEqual([2, 4]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.take(2)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2]);
 		});
 	});
 });

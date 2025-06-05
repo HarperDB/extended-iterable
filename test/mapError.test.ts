@@ -216,6 +216,22 @@ describe('.mapError()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, item => item * 2);
 			expect(iter.mapError().asArray).toEqual([2, 4, 6]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: (number | Error)[] = [];
+			const iter = new ExtendedIterable<number>(simpleGenerator)
+				.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item * 2;
+				})
+				.mapError(error => error);
+			for (const item of iter) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, new Error('error'), 6]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -252,6 +268,22 @@ describe('.mapError()', () => {
 				throw new Error('test');
 			});
 			expect(await iter.mapError().asArray).toEqual([new Error('test'), new Error('test'), new Error('test')]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: (number | Error)[] = [];
+			const iter = new ExtendedIterable<number>(simpleAsyncGenerator)
+				.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item * 2;
+				})
+				.mapError(error => error);
+			for await (const item of iter) {
+				items.push(item);
+			}
+			expect(items).toEqual([2, new Error('error'), 6]);
 		});
 	});
 });

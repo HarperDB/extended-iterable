@@ -109,6 +109,15 @@ describe('.filter()', () => {
 			const filtered = iter.filter(item => item < 0);
 			expect(filtered.asArray).toEqual([]);
 		});
+
+		it('should loop over the iterable', () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleGenerator);
+			for (const item of iter.filter(item => item < 3)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -128,6 +137,15 @@ describe('.filter()', () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			const filtered = iter.filter(item => item < 0);
 			expect(await filtered.asArray).toEqual([]);
+		});
+
+		it('should async loop over the iterable', async () => {
+			const items: number[] = [];
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			for await (const item of iter.filter(item => item < 3)) {
+				items.push(item);
+			}
+			expect(items).toEqual([1, 2]);
 		});
 	});
 });
