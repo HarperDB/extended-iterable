@@ -34,6 +34,11 @@ describe('.slice()', () => {
 			expect(iter.slice(5).asArray).toEqual([]);
 		});
 
+		it('should return an empty iterable if start is greater than the end', () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4]);
+			expect(iter.slice(3, 2).asArray).toEqual([]);
+		});
+
 		it('should throw error if start is not a number', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(() => iter.slice('foo' as any)).toThrowError(new TypeError('Start is not a number'));
@@ -85,6 +90,11 @@ describe('.slice()', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
 			expect(iter.slice(5).asArray).toEqual([]);
 		});
+
+		it('should return an empty iterable if start is greater than the end', () => {
+			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
+			expect(iter.slice(3, 2).asArray).toEqual([]);
+		});
 	});
 
 	describe('iterable object', () => {
@@ -117,6 +127,11 @@ describe('.slice()', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.slice(5).asArray).toEqual([]);
 		});
+
+		it('should return an empty iterable if start is greater than the end', () => {
+			const iter = new ExtendedIterable(createIterableObject());
+			expect(iter.slice(3, 2).asArray).toEqual([]);
+		});
 	});
 
 	describe('generator function', () => {
@@ -139,6 +154,11 @@ describe('.slice()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, item => item * 2);
 			expect(iter.slice(1, 3).asArray).toEqual([4, 6]);
 		});
+
+		it('should return an empty iterable if start is greater than the end', () => {
+			const iter = new ExtendedIterable(simpleGenerator);
+			expect(iter.slice(3, 2).asArray).toEqual([]);
+		});
 	});
 
 	describe('async generator function', () => {
@@ -160,6 +180,11 @@ describe('.slice()', () => {
 		it('should return a transformed iterable with start and end', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, item => item * 2);
 			expect(await iter.slice(1, 2).asArray).toEqual([4]);
+		});
+
+		it('should return an empty iterable if start is greater than the end', () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(iter.slice(3, 2).asArray).toEqual([]);
 		});
 	});
 });
