@@ -74,8 +74,6 @@ export class ExtendedIterable<T> {
 		const array: T[] = [];
 		let result = iterator.next();
 
-		console.log('>>>>>', transformer);
-
 		// if first result is a Promise, we know it's async
 		if (result instanceof Promise) {
 			return this.#asyncAsArray(array, result);
@@ -550,7 +548,7 @@ export class ExtendedIterable<T> {
 	 * const flattened = iterator.flatMap(item => [item, item]);
 	 * ```
 	 */
-	flatMap<U>(callback: (value: T, index: number) => U[] | Iterable<U>): ExtendedIterable<U> {
+	flatMap<U>(callback: (value: T, index: number) => U | U[] | Iterable<U> | Promise<U | U[] | Iterable<U>>): ExtendedIterable<U> {
 		if (typeof callback !== 'function') {
 			throw new TypeError('Callback is not a function');
 		}
@@ -560,7 +558,7 @@ export class ExtendedIterable<T> {
 
 		class FlatMapIterator implements Iterator<U>, AsyncIterator<U> {
 			#index = 0;
-			#currentSubIterator: Iterator<U> | AsyncIterator<U> | null = null;
+			#currentSubIterator: Iterator<U> | null = null;
 
 			next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
 				return this.#getNext();
@@ -570,11 +568,6 @@ export class ExtendedIterable<T> {
 				// try to get value from current sub-iterator first
 				if (this.#currentSubIterator) {
 					const subResult = this.#currentSubIterator.next();
-					if (subResult instanceof Promise) {
-						return subResult.then(result =>
-							result.done ? this.#getNextFromMain() : result
-						);
-					}
 					if (!subResult.done) {
 						return subResult;
 					}
@@ -604,20 +597,19 @@ export class ExtendedIterable<T> {
 
 				// create sub-iterator if callback result is iterable
 				if (
-					callbackResult &&
-					(
-						Array.isArray(callbackResult) ||
-						typeof callbackResult[Symbol.iterator] === 'function'
-					)
+					Array.isArray(callbackResult) ||
+					typeof callbackResult?.[Symbol.iterator] === 'function'
 				) {
 					this.#currentSubIterator = callbackResult[Symbol.iterator]();
-				} else {
-					// not iterable, skip and get next
-					return this.#getNextFromMain();
+					// Get first value from new sub-iterator
+					return this.#getNext();
 				}
 
-				// Get first value from new sub-iterator
-				return this.#getNext();
+				// not iterable, return as single value
+				return {
+					value: callbackResult as U,
+					done: false
+				};
 			}
 		}
 
@@ -1101,8 +1093,6 @@ export class ExtendedIterable<T> {
 		let result = iterator.next();
 		let index = 0;
 
-		console.log('result', result);
-
 		// if first result is a promise, we know this is async
 		if (result instanceof Promise) {
 			return this.#asyncSome(result, callback, index);
@@ -1110,14 +1100,11 @@ export class ExtendedIterable<T> {
 
 		// sync path
 		while (!result.done) {
-			console.log('transformer', transformer);
 			const value = transformer ? transformer(result.value) : result.value;
 			if (callback(value, index++)) {
-				console.log('true');
 				return true;
 			}
 			result = iterator.next() as IteratorResult<T>;
-			console.log('result', result);
 
 			// if we encounter a Promise mid-iteration, switch to async
 			if (result instanceof Promise) {

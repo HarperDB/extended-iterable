@@ -9,6 +9,11 @@ describe('.flatMap()', () => {
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([1, 1, 2, 2, 3, 3]);
 		});
 
+		it('should return a flattened iterable that didn\'t need flattening', () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(iter.flatMap(item => item).asArray).toEqual([1, 2, 3]);
+		});
+
 		it('should return a flattened iterable with a transformer', () => {
 			const iter = new ExtendedIterable([1, 2, 3], (value) => value * 2);
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
