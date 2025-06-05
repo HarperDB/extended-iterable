@@ -74,6 +74,8 @@ export class ExtendedIterable<T> {
 		const array: T[] = [];
 		let result = iterator.next();
 
+		console.log('>>>>>', transformer);
+
 		// if first result is a Promise, we know it's async
 		if (result instanceof Promise) {
 			return this.#asyncAsArray(array, result);
@@ -758,7 +760,7 @@ export class ExtendedIterable<T> {
 	 */
 	mapError(catchCallback?: (error: Error) => Error): ExtendedIterable<T | Error> {
 		if (catchCallback && typeof catchCallback !== 'function') {
-			throw new TypeError('catchCallback is not a function');
+			throw new TypeError('Callback is not a function');
 		}
 
 		const iterator = this.#iterator;

@@ -28,13 +28,13 @@ describe('.mapError()', () => {
 		});
 
 		it('should return a mapped iterable with an error and a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3]);
+			const iter = new ExtendedIterable([1, 2, 3], item => item * 2);
 			expect(iter
 				.map(item => {
-					if (item === 2) {
+					if (item === 4) {
 						throw new Error('error');
 					}
-					return item * 2;
+					return item;
 				})
 				.mapError(error => error)
 				.asArray
@@ -52,7 +52,21 @@ describe('.mapError()', () => {
 
 		it('should throw an error if the callback is not a function', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(() => iter.map('foo' as any).mapError(error => error)).toThrowError(new TypeError('Callback is not a function'));
+			expect(() => iter.map(item => item * 2).mapError(123 as any)).toThrowError(new TypeError('Callback is not a function'));
+		});
+
+		it('should return a mapped iterable with an error without a callback', () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(iter
+				.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item * 2;
+				})
+				.mapError()
+				.asArray
+			).toEqual([2, new Error('error'), 6]);
 		});
 	});
 
