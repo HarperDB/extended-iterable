@@ -72,6 +72,11 @@ describe('.take()', () => {
 			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
 			expect(iter.take(2).asArray).toEqual([0, 2]);
 		});
+
+		it('should return an empty iterable if the iterable object is empty', () => {
+			const iter = new ExtendedIterable(createEmptyIterableObject());
+			expect(iter.take(2).asArray).toEqual([]);
+		});
 	});
 
 	describe('generator function', () => {

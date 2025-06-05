@@ -145,7 +145,7 @@ describe('.mapError()', () => {
 		it('should return an empty iterable if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter
-				.map(item => {
+				.map(() => {
 					throw new Error('error');
 				})
 				.mapError(error => error)
