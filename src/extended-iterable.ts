@@ -842,54 +842,48 @@ export class ExtendedIterable<T> {
 		let index = 0;
 		let accumulator: U;
 
-		// try synchronous path first
-		try {
-			// handle initial value setup
-			if (!hasInitialValue) {
-				const firstResult = iterator.next();
+		// handle initial value setup
+		if (!hasInitialValue) {
+			const firstResult = iterator.next();
 
-				// if first result is a promise, we know this is async
-				if (firstResult instanceof Promise) {
-					return this.#asyncReduce(firstResult, callback, undefined as any, index, false);
-				}
-
-				if (firstResult.done) {
-					throw new TypeError('Reduce of empty iterable with no initial value');
-				}
-
-				const firstValue = transformer ? transformer(firstResult.value) : firstResult.value;
-				accumulator = firstValue as unknown as U;
-				index = 1;
-			} else {
-				accumulator = initialValue!;
+			// if first result is a promise, we know this is async
+			if (firstResult instanceof Promise) {
+				return this.#asyncReduce(firstResult, callback, undefined as any, index, false);
 			}
 
-			// process remaining elements synchronously
-			let result = iterator.next();
+			if (firstResult.done) {
+				throw new TypeError('Reduce of empty iterable with no initial value');
+			}
 
-			// if we encounter a Promise, switch to async
+			const firstValue = transformer ? transformer(firstResult.value) : firstResult.value;
+			accumulator = firstValue as unknown as U;
+			index = 1;
+		} else {
+			accumulator = initialValue!;
+		}
+
+		// process remaining elements synchronously
+		let result = iterator.next();
+
+		// if we encounter a Promise, switch to async
+		if (result instanceof Promise) {
+			return this.#asyncReduce(result, callback, accumulator, index, true);
+		}
+
+		// continue with synchronous iteration
+		while (!result.done) {
+			const value = transformer ? transformer(result.value) : result.value;
+			accumulator = callback(accumulator, value, index++);
+
+			result = iterator.next();
+
+			// if we encounter a Promise mid-iteration, switch to async
 			if (result instanceof Promise) {
 				return this.#asyncReduce(result, callback, accumulator, index, true);
 			}
-
-			// continue with synchronous iteration
-			while (!result.done) {
-				const value = transformer ? transformer(result.value) : result.value;
-				accumulator = callback(accumulator, value, index++);
-
-				result = iterator.next();
-
-				// if we encounter a Promise mid-iteration, switch to async
-				if (result instanceof Promise) {
-					return this.#asyncReduce(result, callback, accumulator, index, true);
-				}
-			}
-
-			return accumulator;
-		} catch (error) {
-			// if sync iteration throws, fall back to async with rejection
-			return Promise.reject(error);
 		}
+
+		return accumulator;
 	}
 
 	/**

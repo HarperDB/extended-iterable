@@ -26,6 +26,15 @@ export async function* simpleAsyncGenerator() {
 }
 
 /**
+ * Creates an empty async generator function.
+ *
+ * @returns The empty async generator function.
+ */
+export async function* emptyAsyncGenerator() {
+	await delay(5);
+}
+
+/**
  * Creates an iterable object that produces the numbers 0, 1, 2, 3.
  *
  * @returns The iterable object.
