@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.at()', () => {
 	describe('array', () => {
@@ -62,6 +62,11 @@ describe('.at()', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.at(4)).toBeUndefined;
 		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.at(4)).toEqual(4);
+		});
 	});
 
 	describe('generator function', () => {
@@ -74,6 +79,11 @@ describe('.at()', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.at(2)).toEqual(6);
 		});
+
+		it('should return undefined if index out of range', () => {
+			const iter = new ExtendedIterable(simpleGenerator);
+			expect(iter.at(6)).toBeUndefined;
+		});
 	});
 
 	describe('async generator function', () => {
@@ -85,6 +95,11 @@ describe('.at()', () => {
 		it('should return a transformed item at a specific index from an async generator function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.at(2)).toEqual(6);
+		});
+
+		it('should return undefined if index out of range', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.at(6)).toBeUndefined;
 		});
 	});
 });

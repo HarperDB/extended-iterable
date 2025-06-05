@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.asArray', () => {
 	describe('array', () => {
@@ -52,6 +52,11 @@ describe('.asArray', () => {
 			const iterator = new ExtendedIterable(createEmptyIterableObject());
 			expect(iterator.asArray).toEqual([]);
 		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.asArray).toEqual([0, 1, 2, 3, 4, 5]);
+		});
 	});
 
 	describe('generator function', () => {
@@ -75,6 +80,13 @@ describe('.asArray', () => {
 		it('should return an array of the transformed values', async () => {
 			const iterator = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iterator.asArray).toEqual([2, 4, 6]);
+		});
+
+		it('should reject if transformer throws an error', async () => {
+			const iterator = new ExtendedIterable(simpleAsyncGenerator, () => {
+				throw new Error('test');
+			});
+			await expect(iterator.asArray).rejects.toThrow('test');
 		});
 	});
 });

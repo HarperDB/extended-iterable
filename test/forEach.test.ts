@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.forEach()', () => {
 	describe('array', () => {
@@ -28,6 +28,13 @@ describe('.forEach()', () => {
 		it('should throw an error if the callback is not a function', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
 			expect(() => iter.forEach('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
+		});
+
+		it('should throw an error if the transformer throws an error', () => {
+			const iter = new ExtendedIterable([1, 2, 3], () => {
+				throw new Error('test');
+			});
+			expect(() => iter.forEach(item => item)).toThrowError(new Error('test'));
 		});
 	});
 
@@ -75,6 +82,23 @@ describe('.forEach()', () => {
 			iter.forEach(item => result.push(item));
 			expect(result).toEqual([]);
 		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			const result: number[] = [];
+			await iterator.forEach(item => result.push(item));
+			expect(result).toEqual([0, 1, 2, 3, 4, 5]);
+		});
+
+		it('should reject if the transformer throws an error', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject(), item => {
+				if (item === 3) {
+					throw new Error('test');
+				}
+				return item;
+			});
+			await expect(iterator.forEach(item => item)).rejects.toThrow('test');
+		});
 	});
 
 	describe('generator function', () => {
@@ -106,6 +130,16 @@ describe('.forEach()', () => {
 			const result: number[] = [];
 			await iter.forEach(item => result.push(item));
 			expect(result).toEqual([2, 4, 6]);
+		});
+
+		it('should reject if the transformer throws an error', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => {
+				if (value === 3) {
+					throw new Error('test');
+				}
+				return value;
+			});
+			await expect(iter.forEach(item => item)).rejects.toThrow('test');
 		});
 	});
 });

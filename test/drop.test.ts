@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.drop()', () => {
 	describe('array', () => {
@@ -66,6 +66,11 @@ describe('.drop()', () => {
 		it('should return an empty array if the limit is greater than the length of the array from an iterable object', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.drop(5).asArray).toEqual([]);
+		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.drop(2).asArray).toEqual([2, 3, 4, 5]);
 		});
 	});
 

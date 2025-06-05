@@ -61,3 +61,29 @@ export function createEmptyIterableObject(): Iterator<number> {
 		}
 	};
 }
+
+export function createMixedAsyncIterableObject(): (Iterator<number> | AsyncIterator<number>) & { index: number } {
+	return {
+		index: 0,
+		next(): IteratorResult<number> | Promise<IteratorResult<number>> | any {
+			if (this.index > 5) {
+				return Promise.resolve({
+					done: true,
+					value: undefined
+				});
+			}
+
+			if (this.index % 2 === 0) {
+				return {
+					value: this.index++,
+					done: false
+				};
+			}
+
+			return Promise.resolve({
+				value: this.index++,
+				done: false
+			});
+		}
+	};
+}

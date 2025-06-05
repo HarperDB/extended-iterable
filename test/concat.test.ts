@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.concat()', () => {
 	describe('array', () => {
@@ -66,6 +66,11 @@ describe('.concat()', () => {
 		it('should concatenate an empty iterable object and a non-empty iterable object', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.concat(createIterableObject()).asArray).toEqual([0, 1, 2, 3]);
+		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.concat(createMixedAsyncIterableObject()).asArray).toEqual([0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5]);
 		});
 	});
 

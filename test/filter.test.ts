@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.filter()', () => {
 	describe('array', () => {
@@ -83,6 +83,11 @@ describe('.filter()', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			const filtered = iter.filter(_item => true);
 			expect(filtered.asArray).toEqual([]);
+		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.filter(item => item < 4).asArray).toEqual([0, 1, 2, 3]);
 		});
 	});
 

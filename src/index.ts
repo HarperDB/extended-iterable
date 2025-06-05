@@ -72,34 +72,27 @@ export class ExtendedIterable<T> {
 		const iterator = this.#iterator;
 		const transformer = this.#transformer;
 		const array: T[] = [];
+		let result = iterator.next();
 
-		// try synchronous path first
-		try {
-			let result = iterator.next();
+		// if first result is a Promise, we know it's async
+		if (result instanceof Promise) {
+			return this.#asyncAsArray(array, result);
+		}
 
-			// if first result is a Promise, we know it's async
+		// continue with synchronous iteration
+		while (!result.done) {
+			const value = transformer ? transformer(result.value) : result.value;
+			array.push(value);
+
+			result = iterator.next();
+
+			// if we encounter a Promise mid-iteration, switch to async
 			if (result instanceof Promise) {
 				return this.#asyncAsArray(array, result);
 			}
-
-			// continue with synchronous iteration
-			while (!result.done) {
-				const value = transformer ? transformer(result.value) : result.value;
-				array.push(value);
-
-				result = iterator.next();
-
-				// if we encounter a Promise mid-iteration, switch to async
-				if (result instanceof Promise) {
-					return this.#asyncAsArray(array, result);
-				}
-			}
-
-			return array;
-		} catch (error) {
-			// if sync iteration throws, fall back to async with rejection
-			return Promise.reject(error);
 		}
+
+		return array;
 	}
 
 	/**
@@ -213,7 +206,6 @@ export class ExtendedIterable<T> {
 
 		class ConcatIterator implements Iterator<T>, AsyncIterator<T> {
 			#firstIteratorDone = false;
-			#secondIterator: Iterator<T> | AsyncIterator<T> = secondIterator;
 
 			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
 				// iterate through the original iterator first
@@ -238,15 +230,11 @@ export class ExtendedIterable<T> {
 			}
 
 			#getNextFromOther(): IteratorResult<T> | Promise<IteratorResult<T>> {
-				if (this.#secondIterator) {
-					const result = this.#secondIterator.next();
-					if (result instanceof Promise) {
-						return result.then(this.#processResult);
-					}
-					return this.#processResult(result);
+				const result = secondIterator.next();
+				if (result instanceof Promise) {
+					return result.then(this.#processResult);
 				}
-
-				return { value: undefined, done: true };
+				return this.#processResult(result);
 			}
 
 			#processResult(result: IteratorResult<T>, transformer?: ValueTransformer<T, T>): IteratorResult<T> {
@@ -661,20 +649,15 @@ export class ExtendedIterable<T> {
 		}
 
 		// sync path
-		try {
-			while (!result.done) {
-				const value = transformer ? transformer(result.value) : result.value;
-				callback(value, index++);
-				result = iterator.next() as IteratorResult<T>;
+		while (!result.done) {
+			const value = transformer ? transformer(result.value) : result.value;
+			callback(value, index++);
+			result = iterator.next() as IteratorResult<T>;
 
-				// if we encounter a Promise mid-iteration, switch to async
-				if (result instanceof Promise) {
-					return this.#asyncForEach(result, callback, index);
-				}
+			// if we encounter a Promise mid-iteration, switch to async
+			if (result instanceof Promise) {
+				return this.#asyncForEach(result, callback, index);
 			}
-		} catch (error) {
-			// if sync iteration throws, fall back to async with rejection
-			return Promise.reject(error);
 		}
 	}
 

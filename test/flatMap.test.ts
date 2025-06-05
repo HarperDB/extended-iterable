@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/index.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.flatMap()', () => {
 	describe('array', () => {
@@ -56,6 +56,11 @@ describe('.flatMap()', () => {
 		it('should return an empty iterable if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([]);
+		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.flatMap(item => [item, item]).asArray).toEqual([0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]);
 		});
 	});
 
