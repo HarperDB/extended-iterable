@@ -18,6 +18,7 @@
     "outDir": "./dist",
     "preserveWatchOutput": true,
     "removeComments": true,
+    "rootDir": ".",
     "skipLibCheck": true,
     "strict": true,
     "sourceMap": false,

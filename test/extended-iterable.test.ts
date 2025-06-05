@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ExtendedIterable } from '../src/index.js';
+import { ExtendedIterable } from '../src/extended-iterable.js';
 import { simpleAsyncGenerator } from './lib/util.js';
 
 describe('ExtendedIterable', () => {
