@@ -71,6 +71,11 @@ export function createEmptyIterableObject(): Iterator<number> {
 	};
 }
 
+/**
+ * Creates an iterable object that produces the numbers 0, 1, 2, 3, 4, 5.
+ *
+ * @returns The iterable object.
+ */
 export function createMixedAsyncIterableObject(): (Iterator<number> | AsyncIterator<number>) & { index: number } {
 	return {
 		index: 0,

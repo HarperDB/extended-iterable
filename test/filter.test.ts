@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import {
+	createIterableObject,
+	createEmptyIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator,
+} from './lib/util.js';
 
 describe('.filter()', () => {
 	describe('array', () => {
@@ -31,6 +38,47 @@ describe('.filter()', () => {
 		it('should throw an error if the callback is not a function', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(() => iter.filter('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
+		});
+
+		it('should propagate error in callback function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				iter.filter(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return true;
+				}).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3], value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				iter.filter(_item => true).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3, 4]);
+			expect(await iter.filter(async item => {
+				await delay(10);
+				return item < 3;
+			}).asArray).toEqual([1, 2]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				await iter.filter(async item => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 
@@ -146,6 +194,47 @@ describe('.filter()', () => {
 				items.push(item);
 			}
 			expect(items).toEqual([1, 2]);
+		});
+
+		it('should propagate error in callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.filter(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return true;
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				await iter.filter(_item => true).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.filter(async item => {
+				await delay(10);
+				return item < 3;
+			}).asArray).toEqual([1, 2]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.filter(async item => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 });

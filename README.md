@@ -1,12 +1,15 @@
 [![license](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/extended-iterable.svg?style=flat-square)](https://www.npmjs.org/package/extended-iterable)
-[![npm downloads](https://img.shields.io/npm/dw/extended-iterable)](https://www.npmjs.org/package/extended-iterable)
+[![npm version](https://img.shields.io/npm/v/@harperdb/extended-iterable.svg?style=flat-square)](https://www.npmjs.org/package/@harperdb/extended-iterable)
+[![npm downloads](https://img.shields.io/npm/dw/@harperdb/extended-iterable)](https://www.npmjs.org/package/@harperdb/extended-iterable)
 
-The extended-iterable package provides a class that implements the Iterable/Iterator protocol and provides array-like methods
-with lazy evaluation, similar to [iterators helpers](https://github.com/tc39/proposal-iterator-helpers). However,
-extended-iterable provides additional methods, the ability to handle both sync and async iteration, automatic handling of
-asynchronous callbacks, and return/throw forwarding which can be critical for proper cleanup when used with
-database transactions.
+The extended-iterable package provides a class that implements the
+Iterable/Iterator protocol and provides array-like methods with lazy
+evaluation, similar to
+[iterators helpers](https://github.com/tc39/proposal-iterator-helpers).
+However, extended-iterable provides additional methods, the ability to handle
+both sync and async iteration, automatic handling of asynchronous callbacks,
+and return/throw forwarding which can be critical for proper cleanup when used
+with database transactions.
 
 The package exports a single `ExtendedIterable` class, which can be constructed with a basic iterable or can be constructed
 with no arguments and assigned (or overridden with) an `iterate` method that returns an iterator.
@@ -43,7 +46,7 @@ function performQuery() {
 ```
 
 
-The returned `ExtendedIterable` is fully iterable: 
+The returned `ExtendedIterable` is fully iterable:
 
 ```js
 let extendedIterable = performQuery();
@@ -75,7 +78,7 @@ If you want to get a true array from the results, the `asArray` property will re
 ### Catching Errors in iteration
 With an array, `map` and `filter` callbacks are immediately executed, but wit iterators, they are executed during iteration, so if an error occurs during iteration, the error will be thrown when the iteration is attempted. It is also critical that when an iteration is finished, the cursor is closed, so by default, if an error occurs during iteration, the cursor will immediately be closed. However, if you want to catch errors that occur in `map` (and `flatMap`) callbacks during iteration, you can use the `mapError` method to catch errors that occur during iteration, and allow iteration to continue (without closing the cursor). For example:
 
-```js 
+```js
 let mapped = extendedIterable.map(({ key, value }) => {
 	return thisMightThrowError(value);
 }).mapError((error) => {

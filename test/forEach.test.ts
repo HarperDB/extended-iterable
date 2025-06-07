@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import {
+	createEmptyIterableObject,
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.forEach()', () => {
 	describe('array', () => {
@@ -35,6 +42,48 @@ describe('.forEach()', () => {
 				throw new Error('test');
 			});
 			expect(() => iter.forEach(item => item)).toThrowError(new Error('test'));
+		});
+
+		it('should propagate error in callback function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				iter.forEach(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				});
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3], value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				iter.forEach(item => item * 2);
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			const result: number[] = [];
+			await iter.forEach(async item => {
+				await delay(10);
+				result.push(item);
+			});
+			expect(result).toEqual([1, 2, 3]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				await iter.forEach(async item => {
+					throw new Error('error');
+				});
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 
@@ -140,6 +189,48 @@ describe('.forEach()', () => {
 				return value;
 			});
 			await expect(iter.forEach(item => item)).rejects.toThrow('test');
+		});
+
+		it('should propagate error in callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.forEach(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				});
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				await iter.forEach(() => {});
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			const result: number[] = [];
+			await iter.forEach(async item => {
+				await delay(10);
+				result.push(item * 2);
+			});
+			expect(result).toEqual([2, 4, 6]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.forEach(async item => {
+					throw new Error('error');
+				});
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 });

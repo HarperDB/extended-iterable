@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import {
+	createEmptyIterableObject,
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.drop()', () => {
 	describe('array', () => {
@@ -71,6 +77,11 @@ describe('.drop()', () => {
 		it('should return an iterable with mixed async and sync values', async () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
 			expect(await iterator.drop(2).asArray).toEqual([2, 3, 4, 5]);
+		});
+
+		it('should return an empty iterable if the iterable object is empty', () => {
+			const iter = new ExtendedIterable(createEmptyIterableObject());
+			expect(iter.drop(2).asArray).toEqual([]);
 		});
 	});
 

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import {
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.at()', () => {
 	describe('array', () => {

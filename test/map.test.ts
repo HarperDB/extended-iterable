@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import {
+	createEmptyIterableObject,
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.map()', () => {
 	describe('array', () => {
@@ -22,6 +29,46 @@ describe('.map()', () => {
 		it('should throw an error if the callback is not a function', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
 			expect(() => iter.map('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
+		});
+
+		it('should propagate error in callback function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				iter.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				}).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3], value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				iter.map(item => item * 2).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(await iter.map(async item => {
+				await delay(10);
+				return item * 2;
+			}).asArray).toEqual([2, 4, 6]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				await iter.map(async item => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 
@@ -56,6 +103,11 @@ describe('.map()', () => {
 		it('should return an empty iterable if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.map(item => item * 2).asArray).toEqual([]);
+		});
+
+		it('should return an iterable with mixed async and sync values', async () => {
+			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iterator.map(item => item * 2).asArray).toEqual([0, 2, 4, 6, 8, 10]);
 		});
 	});
 
@@ -98,6 +150,46 @@ describe('.map()', () => {
 				items.push(item);
 			}
 			expect(items).toEqual([2, 4, 6]);
+		});
+
+		it('should propagate error in callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				await iter.map(item => item * 2).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.map(async item => {
+				await delay(10);
+				return item * 2;
+			}).asArray).toEqual([2, 4, 6]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.map(async item => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 });

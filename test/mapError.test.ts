@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject } from './lib/util.js';
+import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
 
 describe('.mapError()', () => {
 	describe('array', () => {
@@ -185,6 +185,11 @@ describe('.mapError()', () => {
 		it('should return a iterable with a transformer and without an error', () => {
 			const iter = new ExtendedIterable(createIterableObject(), item => item * 2);
 			expect(iter.mapError().asArray).toEqual([0, 2, 4, 6]);
+		});
+
+		it('should return an iterabel from a mixed sync and async iterable', async () => {
+			const iter = new ExtendedIterable(createMixedAsyncIterableObject());
+			expect(await iter.mapError().asArray).toEqual([0, 1, 2, 3, 4, 5]);
 		});
 	});
 
