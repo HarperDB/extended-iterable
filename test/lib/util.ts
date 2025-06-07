@@ -30,6 +30,7 @@ export async function* simpleAsyncGenerator() {
  *
  * @returns The empty async generator function.
  */
+// eslint-disable-next-line require-yield
 export async function* emptyAsyncGenerator() {
 	await delay(5);
 }

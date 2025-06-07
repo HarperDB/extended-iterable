@@ -61,7 +61,7 @@ describe('.every()', () => {
 					}
 					return value * 2;
 				});
-				iter.every(item => true);
+				iter.every(() => true);
 			}).toThrowError(new Error('error'));
 		});
 

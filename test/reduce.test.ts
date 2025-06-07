@@ -82,7 +82,7 @@ describe('.reduce()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.map(async item => {
+				await iter.map(async () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));

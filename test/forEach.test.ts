@@ -80,7 +80,7 @@ describe('.forEach()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.forEach(async item => {
+				await iter.forEach(async () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
@@ -227,7 +227,7 @@ describe('.forEach()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.forEach(async item => {
+				await iter.forEach(async () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));

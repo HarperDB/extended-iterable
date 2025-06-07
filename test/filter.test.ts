@@ -75,7 +75,7 @@ describe('.filter()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.filter(async item => {
+				await iter.filter(async () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));
@@ -231,7 +231,7 @@ describe('.filter()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.filter(async item => {
+				await iter.filter(async () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));

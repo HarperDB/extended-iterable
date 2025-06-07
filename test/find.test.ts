@@ -71,7 +71,7 @@ describe('.find()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.map(async item => {
+				await iter.map(async () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));
@@ -195,7 +195,7 @@ describe('.find()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.find(async item => {
+				await iter.find(async () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));

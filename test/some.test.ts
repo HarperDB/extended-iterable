@@ -44,7 +44,7 @@ describe('.some()', () => {
 		it('should propagate error in callback function', () => {
 			expect(() => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				iter.some(item => {
+				iter.some(() => {
 					throw new Error('error');
 				});
 			}).toThrowError(new Error('error'));
@@ -58,13 +58,13 @@ describe('.some()', () => {
 					}
 					return value * 2;
 				});
-				iter.some(item => false);
+				iter.some(() => false);
 			}).toThrowError(new Error('error'));
 		});
 
 		it('should return true if some items satisfy the async callback', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.some(async item => {
+			expect(await iter.some(async () => {
 				await delay(10);
 				return true;
 			})).toEqual(true);
@@ -81,7 +81,7 @@ describe('.some()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.some(async _item => {
+				await iter.some(async () => {
 					await delay(10);
 					throw new Error('error');
 				});
@@ -154,7 +154,7 @@ describe('.some()', () => {
 		it('should propagate error in callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.some(item => {
+				await iter.some(() => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
@@ -191,7 +191,7 @@ describe('.some()', () => {
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.some(async _item => {
+				await iter.some(async () => {
 					await delay(10);
 					throw new Error('error');
 				});
