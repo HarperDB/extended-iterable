@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
 	createEmptyIterableObject,
 	createIterableObject,
@@ -44,6 +45,47 @@ describe('.reduce()', () => {
 		it('should throw an error if the iterable is empty and no initial value is provided', () => {
 			const iter = new ExtendedIterable([]);
 			expect(() => iter.reduce((_acc, item) => item)).toThrowError(new TypeError('Reduce of empty iterable with no initial value'));
+		});
+
+		it('should propagate error in callback function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				iter.reduce((acc, item) => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return acc + item;
+				});
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3], value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				iter.reduce((acc, item) => acc + item);
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(await iter.reduce(async (acc, item) => {
+				await delay(10);
+				return acc + item;
+			}, 0)).toEqual(6);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				await iter.map(async item => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 
@@ -122,6 +164,47 @@ describe('.reduce()', () => {
 		it('should reduce the iterable to a single value without an initial value', async () => {
 			const iter = new ExtendedIterable<number>(emptyAsyncGenerator);
 			await expect(iter.reduce((acc, item) => acc ? acc + item : item)).rejects.toThrowError(new TypeError('Reduce of empty iterable with no initial value'));
+		});
+
+		it('should propagate error in callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.reduce(async (acc, item) => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return acc + item;
+				}, 0);
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				await iter.reduce(async (acc, item) => acc + item, 0);
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.reduce(async (acc, item) => {
+				await delay(10);
+				return acc + item;
+			}, 0)).toEqual(6);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.reduce(async (_acc, _item) => {
+					throw new Error('error');
+				}, 0);
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 });

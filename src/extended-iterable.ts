@@ -681,6 +681,15 @@ export class ExtendedIterable<T> {
 				const value = transformer ? transformer(result.value) : result.value;
 				const callbackResult = callback(value, this.#index++);
 
+				// handle promise from callback
+				if (callbackResult instanceof Promise) {
+					return callbackResult.then(resolvedResult => this.#processCallbackResult(resolvedResult));
+				}
+
+				return this.#processCallbackResult(callbackResult);
+			}
+
+			#processCallbackResult(callbackResult: U | U[] | Iterable<U>): IteratorResult<U> | Promise<IteratorResult<U>> {
 				// create sub-iterator if callback result is iterable
 				if (
 					Array.isArray(callbackResult) ||
@@ -857,7 +866,7 @@ export class ExtendedIterable<T> {
 	 * const mapped = iterator.mapError(error => new Error('Error: ' + error.message));
 	 * ```
 	 */
-	mapError(catchCallback?: (error: Error | unknown) => Error | unknown): ExtendedIterable<T | Error> {
+	mapError(catchCallback?: (error: Error | unknown) => Error | unknown | Promise<Error | unknown>): ExtendedIterable<T | Error> {
 		if (catchCallback && typeof catchCallback !== 'function') {
 			throw new TypeError('Callback is not a function');
 		}
@@ -887,9 +896,22 @@ export class ExtendedIterable<T> {
 					};
 				} catch (error: unknown) {
 					// handle sync errors - return error as value and continue on next call
-					const err = catchCallback ? catchCallback(error) : error;
+					if (catchCallback) {
+						const err = catchCallback(error);
+						// if catchCallback returns a promise, switch to async handling
+						if (err instanceof Promise) {
+							return err.then(resolvedErr => ({
+								value: resolvedErr,
+								done: false
+							}));
+						}
+						return {
+							value: err,
+							done: false
+						};
+					}
 					return {
-						value: err as any,
+						value: error,
 						done: false
 					};
 				}
@@ -911,9 +933,17 @@ export class ExtendedIterable<T> {
 					};
 				} catch (error) {
 					// handle async errors - return error as value
-					const err = catchCallback ? catchCallback(error) : error;
+					if (catchCallback) {
+						const err = catchCallback(error);
+						// await the result if it's a promise
+						const resolvedErr = err instanceof Promise ? await err : err;
+						return {
+							value: resolvedErr as any,
+							done: false
+						};
+					}
 					return {
-						value: err as any,
+						value: error as any,
 						done: false
 					};
 				}
@@ -936,9 +966,9 @@ export class ExtendedIterable<T> {
 	 * const sum = iterator.reduce((acc, item) => acc + item, 0);
 	 * ````
 	 */
-	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U, initialValue: U): U | Promise<U>;
-	reduce(callback: (previousValue: T, currentValue: T, currentIndex: number) => T): T | Promise<T>;
-	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U, initialValue?: U): U | Promise<U> {
+	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>, initialValue: U): U | Promise<U>;
+	reduce(callback: (previousValue: T, currentValue: T, currentIndex: number) => T | Promise<T>): T | Promise<T>;
+	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>, initialValue?: U): U | Promise<U> {
 		if (typeof callback !== 'function') {
 			throw new TypeError('Callback is not a function');
 		}
@@ -980,8 +1010,17 @@ export class ExtendedIterable<T> {
 		// continue with synchronous iteration
 		while (!result.done) {
 			const value = transformer ? transformer(result.value) : result.value;
-			accumulator = callback(accumulator, value, index++);
+			const callbackResult = callback(accumulator, value, index++);
 
+			// if callback returns a promise, switch to async
+			if (callbackResult instanceof Promise) {
+				return callbackResult.then(resolvedAccumulator => {
+					accumulator = resolvedAccumulator;
+					return this.#asyncReduce(iterator.next(), callback, accumulator, index, true);
+				});
+			}
+
+			accumulator = callbackResult;
 			result = iterator.next();
 
 			// if we encounter a Promise mid-iteration, switch to async
@@ -1004,8 +1043,8 @@ export class ExtendedIterable<T> {
 	 * @returns The reduced value.
 	 */
 	async #asyncReduce<U>(
-		result: Promise<IteratorResult<T>>,
-		callback: (previousValue: U, currentValue: T, currentIndex: number) => U,
+		result: IteratorResult<T> | Promise<IteratorResult<T>>,
+		callback: (previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>,
 		accumulator: U,
 		index: number,
 		hasAccumulator: boolean
@@ -1029,7 +1068,11 @@ export class ExtendedIterable<T> {
 		// process remaining elements
 		while (!currentResult.done) {
 			const value = transformer ? transformer(currentResult.value) : currentResult.value;
-			accumulator = callback(accumulator, value, index++);
+			const callbackResult = callback(accumulator, value, index++);
+
+			// await the callback result if it's a promise
+			accumulator = callbackResult instanceof Promise ? await callbackResult : callbackResult;
+
 			currentResult = await iterator.next();
 		}
 

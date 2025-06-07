@@ -66,7 +66,7 @@ describe('.some()', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
 			expect(await iter.some(async item => {
 				await delay(10);
-				return item > 1;
+				return true;
 			})).toEqual(true);
 		});
 

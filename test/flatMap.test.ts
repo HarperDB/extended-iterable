@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import {
+	createEmptyIterableObject,
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.flatMap()', () => {
 	describe('array', () => {
@@ -27,6 +34,46 @@ describe('.flatMap()', () => {
 		it('should throw an error if the callback is not a function', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
 			expect(() => iter.flatMap('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
+		});
+
+		it('should propagate error in callback function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				iter.flatMap(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				}).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', () => {
+			expect(() => {
+				const iter = new ExtendedIterable([1, 2, 3], value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				iter.flatMap(item => [item, item]).asArray;
+			}).toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(await iter.flatMap(async item => {
+				await delay(10);
+				return [item, item];
+			}).asArray).toEqual([1, 1, 2, 2, 3, 3]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable([1, 2, 3]);
+				await iter.flatMap(async () => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 
@@ -108,6 +155,46 @@ describe('.flatMap()', () => {
 				items.push(item);
 			}
 			expect(items).toEqual([1, 1, 2, 2, 3, 3]);
+		});
+
+		it('should propagate error in callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.flatMap(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should propagate error in transformer function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
+					if (value === 2) {
+						throw new Error('error');
+					}
+					return value * 2;
+				});
+				await iter.flatMap(item => [item, item]).asArray;
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable(simpleAsyncGenerator);
+			expect(await iter.flatMap(async item => {
+				await delay(10);
+				return [item, item];
+			}).asArray).toEqual([1, 1, 2, 2, 3, 3]);
+		});
+
+		it('should propagate error in async callback function', async () => {
+			await expect(async () => {
+				const iter = new ExtendedIterable(simpleAsyncGenerator);
+				await iter.flatMap(async () => {
+					throw new Error('error');
+				}).asArray;
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 });

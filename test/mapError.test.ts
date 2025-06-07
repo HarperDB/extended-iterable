@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { simpleGenerator, simpleAsyncGenerator, createIterableObject, createEmptyIterableObject, createMixedAsyncIterableObject } from './lib/util.js';
+import { setTimeout as delay } from 'node:timers/promises';
+import {
+	createEmptyIterableObject,
+	createIterableObject,
+	createMixedAsyncIterableObject,
+	simpleAsyncGenerator,
+	simpleGenerator
+} from './lib/util.js';
 
 describe('.mapError()', () => {
 	describe('array', () => {
@@ -74,6 +81,38 @@ describe('.mapError()', () => {
 					}
 					return item * 2;
 				})
+				.mapError()
+				.asArray
+			).toEqual([2, new Error('error'), 6]);
+		});
+
+		it('should handle async callback function', async () => {
+			const iter = new ExtendedIterable([1, 2, 3]);
+			expect(
+				await iter
+				.map(item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item * 2;
+				})
+				.mapError(async error => {
+					await delay(10);
+					return error;
+				})
+				.asArray
+			).toEqual([2, new Error('error'), 6]);
+		});
+
+		it('should propagate error in transformer function', () => {
+			const iter = new ExtendedIterable([1, 2, 3], value => {
+				if (value === 2) {
+					throw new Error('error');
+				}
+				return value * 2;
+			});
+			expect(iter
+				.map(item => item)
 				.mapError()
 				.asArray
 			).toEqual([2, new Error('error'), 6]);
@@ -278,13 +317,13 @@ describe('.mapError()', () => {
 		it('should async loop over the iterable', async () => {
 			const items: (number | Error)[] = [];
 			const iter = new ExtendedIterable<number>(simpleAsyncGenerator)
-				.map(item => {
+				.map(async item => {
 					if (item === 2) {
 						throw new Error('error');
 					}
 					return item * 2;
 				})
-				.mapError(error => error);
+				.mapError(async error => error);
 			for await (const item of iter) {
 				items.push(item);
 			}
