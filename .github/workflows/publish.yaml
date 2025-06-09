@@ -42,13 +42,13 @@ jobs:
         payload: |
           {
             "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-            "text": "New RocksDB prebuild: v${{ needs.check.outputs.version }}",
+            "text": "New extended-iterable release: v${{ needs.check.outputs.version }}",
             "blocks": [
               {
                 "type": "header",
                 "text": {
                   "type": "plain_text",
-                  "text": "New RocksDB prebuild: v${{ needs.check.outputs.version }}"
+                  "text": "New extended-iterable release: v${{ needs.check.outputs.version }}"
                 }
               },
               {
