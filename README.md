@@ -11,10 +11,8 @@ both sync and async iteration, automatic handling of asynchronous callbacks,
 and return/throw forwarding which can be critical for proper cleanup when used
 with database transactions.
 
-The package exports a single `ExtendedIterable` class, which can be constructed with a basic iterable or can be constructed
-with no arguments and assigned (or overridden with) an `iterate` method that returns an iterator.
 
-For example, we can create an `ExtendedIterable`:
+
 ```javascript
 import { ExtendedIterable } from '@harperdb/extended-iterable';
 
