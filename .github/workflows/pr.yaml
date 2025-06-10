@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: [18, 20, 22]
+        node: [18, 20, 22, 24]
         os: [ubuntu-latest]
 
     steps:
@@ -50,7 +50,7 @@ jobs:
 
       - name: Run tests on Node.js ${{ matrix.node }}
         run: pnpm coverage
-      
+
       - name: Run tests on Bun
         if: ${{ matrix.node == '22' }}
         run: bun coverage
