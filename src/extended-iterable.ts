@@ -101,8 +101,7 @@ export class ExtendedIterable<T> {
 
 		// continue with synchronous iteration
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			array.push(value);
+			array.push(transformer ? transformer(result.value) : result.value);
 
 			result = iterator.next();
 
@@ -128,8 +127,7 @@ export class ExtendedIterable<T> {
 		let result = await currentResult;
 
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			array.push(value);
+			array.push(transformer ? transformer(result.value) : result.value);
 			result = await iterator.next();
 		}
 
@@ -262,8 +260,8 @@ export class ExtendedIterable<T> {
 					return result;
 				}
 				return {
-					value: transformer ? transformer(result.value) : result.value,
-					done: false
+					done: false,
+					value: transformer ? transformer(result.value) : result.value
 				};
 			}
 		}
@@ -348,8 +346,8 @@ export class ExtendedIterable<T> {
 					return result;
 				}
 				return {
-					value: transformer ? transformer(result.value) : result.value,
-					done: false
+					done: false,
+					value: transformer ? transformer(result.value) : result.value
 				};
 			}
 		}
@@ -388,8 +386,7 @@ export class ExtendedIterable<T> {
 
 		// sync path
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			const rval = callback(value, index++);
+			const rval = callback(transformer ? transformer(result.value) : result.value, index++);
 
 			if (rval instanceof Promise) {
 				return rval.then(rval => {
@@ -432,8 +429,7 @@ export class ExtendedIterable<T> {
 		let currentResult = await result;
 
 		while (!currentResult.done) {
-			const value = transformer ? transformer(currentResult.value) : currentResult.value;
-			const ok = callback(value, index++);
+			const ok = callback(transformer ? transformer(currentResult.value) : currentResult.value, index++);
 
 			if (ok instanceof Promise) {
 				return ok.then(ok => {
@@ -494,8 +490,8 @@ export class ExtendedIterable<T> {
 						return keep.then(keep => {
 							if (keep) {
 								return {
-									value,
-									done: false
+									done: false,
+									value
 								};
 							}
 							return this.next();
@@ -504,8 +500,8 @@ export class ExtendedIterable<T> {
 
 					if (keep) {
 						return {
-							value,
-							done: false
+							done: false,
+							value
 						};
 					}
 
@@ -531,8 +527,8 @@ export class ExtendedIterable<T> {
 						return keep.then(keep => {
 							if (keep) {
 								return {
-									value,
-									done: false
+									done: false,
+									value
 								};
 							}
 							return this.next();
@@ -541,8 +537,8 @@ export class ExtendedIterable<T> {
 
 					if (keep) {
 						return {
-							value,
-							done: false
+							done: false,
+							value
 						};
 					}
 					currentResult = await this.next();
@@ -679,11 +675,10 @@ export class ExtendedIterable<T> {
 
 			#processMainResult(result: IteratorResult<T>): IteratorResult<U> | Promise<IteratorResult<U>> {
 				if (result.done) {
-					return { value: undefined as any, done: true };
+					return { done: true, value: undefined as any };
 				}
 
-				const value = transformer ? transformer(result.value) : result.value;
-				const callbackResult = callback(value, this.#index++);
+				const callbackResult = callback(transformer ? transformer(result.value) : result.value, this.#index++);
 
 				// handle promise from callback
 				if (callbackResult instanceof Promise) {
@@ -706,8 +701,8 @@ export class ExtendedIterable<T> {
 
 				// not iterable, return as single value
 				return {
-					value: callbackResult as U,
-					done: false
+					done: false,
+					value: callbackResult as U
 				};
 			}
 		}
@@ -743,8 +738,7 @@ export class ExtendedIterable<T> {
 
 		// sync path
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			const rval = callback(value, index++);
+			const rval = callback(transformer ? transformer(result.value) : result.value, index++);
 			if (rval instanceof Promise) {
 				return rval.then(() => this.#asyncForEach(iterator.next(), callback, index));
 			}
@@ -771,8 +765,7 @@ export class ExtendedIterable<T> {
 		let currentResult = await result;
 
 		while (!currentResult.done) {
-			const value = transformer ? transformer(currentResult.value) : currentResult.value;
-			const rval = callback(value, index++);
+			const rval = callback(transformer ? transformer(currentResult.value) : currentResult.value, index++);
 			if (rval instanceof Promise) {
 				return rval.then(() => this.#asyncForEach(iterator.next(), callback, index));
 			}
@@ -816,19 +809,18 @@ export class ExtendedIterable<T> {
 					return result;
 				}
 
-				const value = transformer ? transformer(result.value) : result.value;
-				const mappedValue = callback(value, this.#index++);
+				const mappedValue = callback(transformer ? transformer(result.value) : result.value, this.#index++);
 
 				if (mappedValue instanceof Promise) {
 					return mappedValue.then(value => ({
-						value,
-						done: false
+						done: false,
+						value
 					}));
 				}
 
 				return {
-					value: mappedValue,
-					done: false
+					done: false,
+					value: mappedValue
 				};
 			}
 
@@ -838,19 +830,18 @@ export class ExtendedIterable<T> {
 					return currentResult as IteratorResult<U>;
 				}
 
-				const value = transformer ? transformer(currentResult.value) : currentResult.value;
-				const mappedValue = callback(value, this.#index++);
+				const mappedValue = callback(transformer ? transformer(currentResult.value) : currentResult.value, this.#index++);
 
 				if (mappedValue instanceof Promise) {
 					return mappedValue.then(value => ({
-						value,
-						done: false
+						done: false,
+						value
 					}));
 				}
 
 				return {
-					value: mappedValue,
-					done: false
+					done: false,
+					value: mappedValue
 				};
 			}
 		}
@@ -895,10 +886,9 @@ export class ExtendedIterable<T> {
 						return result;
 					}
 
-					const value = transformer ? transformer(result.value) : result.value;
 					return {
-						value,
-						done: false
+						done: false,
+						value: transformer ? transformer(result.value) : result.value
 					};
 				} catch (error: unknown) {
 					// handle sync errors - return error as value and continue on next call
@@ -907,18 +897,18 @@ export class ExtendedIterable<T> {
 						// if catchCallback returns a promise, switch to async handling
 						if (err instanceof Promise) {
 							return err.then(resolvedErr => ({
-								value: resolvedErr,
-								done: false
+								done: false,
+								value: resolvedErr
 							}));
 						}
 						return {
-							value: err,
-							done: false
+							done: false,
+							value: err
 						};
 					}
 					return {
-						value: error,
-						done: false
+						done: false,
+						value: error
 					};
 				}
 			}
@@ -932,10 +922,9 @@ export class ExtendedIterable<T> {
 					}
 
 					// apply transformer if present
-					const value = transformer ? transformer(currentResult.value) : currentResult.value;
 					return {
-						value,
-						done: false
+						done: false,
+						value: transformer ? transformer(currentResult.value) : currentResult.value
 					};
 				} catch (error) {
 					// handle async errors - return error as value
@@ -944,13 +933,13 @@ export class ExtendedIterable<T> {
 						// await the result if it's a promise
 						const resolvedErr = err instanceof Promise ? await err : err;
 						return {
-							value: resolvedErr as any,
-							done: false
+							done: false,
+							value: resolvedErr as any
 						};
 					}
 					return {
-						value: error as any,
-						done: false
+						done: false,
+						value: error as any
 					};
 				}
 			}
@@ -1015,8 +1004,7 @@ export class ExtendedIterable<T> {
 
 		// continue with synchronous iteration
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			const callbackResult = callback(accumulator, value, index++);
+			const callbackResult = callback(accumulator, transformer ? transformer(result.value) : result.value, index++);
 
 			// if callback returns a promise, switch to async
 			if (callbackResult instanceof Promise) {
@@ -1073,8 +1061,7 @@ export class ExtendedIterable<T> {
 
 		// process remaining elements
 		while (!currentResult.done) {
-			const value = transformer ? transformer(currentResult.value) : currentResult.value;
-			const callbackResult = callback(accumulator, value, index++);
+			const callbackResult = callback(accumulator, transformer ? transformer(currentResult.value) : currentResult.value, index++);
 
 			// await the callback result if it's a promise
 			accumulator = callbackResult instanceof Promise ? await callbackResult : callbackResult;
@@ -1139,7 +1126,7 @@ export class ExtendedIterable<T> {
 
 				// Check if we've reached the end
 				if (endIndex !== undefined && this.#index >= endIndex) {
-					return { value: undefined, done: true };
+					return { done: true, value: undefined };
 				}
 
 				return this.#getNextValue();
@@ -1183,8 +1170,10 @@ export class ExtendedIterable<T> {
 
 				// process the current result
 				this.#index++;
-				const value = transformer ? transformer(currentResult.value) : currentResult.value;
-				return { value, done: false };
+				return {
+					done: false,
+					value: transformer ? transformer(currentResult.value) : currentResult.value
+				};
 			}
 
 			#getNextValue(): IteratorResult<T> | Promise<IteratorResult<T>> {
@@ -1199,8 +1188,10 @@ export class ExtendedIterable<T> {
 				}
 
 				this.#index++;
-				const value = transformer ? transformer(result.value) : result.value;
-				return { value, done: false };
+				return {
+					done: false,
+					value: transformer ? transformer(result.value) : result.value
+				};
 			}
 
 			async #asyncGetNextValue(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
@@ -1211,8 +1202,10 @@ export class ExtendedIterable<T> {
 				}
 
 				this.#index++;
-				const value = transformer ? transformer(currentResult.value) : currentResult.value;
-				return { value, done: false };
+				return {
+					done: false,
+					value: transformer ? transformer(currentResult.value) : currentResult.value
+				};
 			}
 		}
 
@@ -1250,8 +1243,7 @@ export class ExtendedIterable<T> {
 
 		// sync path
 		while (!result.done) {
-			const value = transformer ? transformer(result.value) : result.value;
-			const rval = callback(value, index++);
+			const rval = callback(transformer ? transformer(result.value) : result.value, index++);
 
 			if (rval instanceof Promise) {
 				return rval.then(rval => {
@@ -1296,8 +1288,7 @@ export class ExtendedIterable<T> {
 		let currentResult = await result;
 
 		while (!currentResult.done) {
-			const value = transformer ? transformer(currentResult.value) : currentResult.value;
-			const rval = callback(value, index++);
+			const rval = callback(transformer ? transformer(currentResult.value) : currentResult.value, index++);
 
 			if (rval instanceof Promise) {
 				return rval.then(rval => {
@@ -1358,14 +1349,13 @@ export class ExtendedIterable<T> {
 				}
 
 				if (this.#count >= limit) {
-					return { value: undefined, done: true };
+					return { done: true, value: undefined };
 				}
 
 				this.#count++;
-				const value = transformer ? transformer(result.value) : result.value;
 				return {
-					value,
-					done: false
+					done: false,
+					value: transformer ? transformer(result.value) : result.value
 				};
 			}
 
@@ -1376,14 +1366,13 @@ export class ExtendedIterable<T> {
 				}
 
 				if (this.#count >= limit) {
-					return { value: undefined, done: true };
+					return { done: true, value: undefined };
 				}
 
 				this.#count++;
-				const value = transformer ? transformer(currentResult.value) : currentResult.value;
 				return {
-					value,
-					done: false
+					done: false,
+					value: transformer ? transformer(currentResult.value) : currentResult.value
 				};
 			}
 		}
