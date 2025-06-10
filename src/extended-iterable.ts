@@ -1383,8 +1383,8 @@ export class ExtendedIterable<T> {
 
 export default ExtendedIterable;
 
-const GeneratorFunction = Object.getPrototypeOf(function*(){}).constructor;
-const AsyncGeneratorFunction = Object.getPrototypeOf(async function*(){}).constructor;
+const GeneratorFunction = (function* () {}).constructor;
+const AsyncGeneratorFunction = (async function* () {}).constructor;
 
 /**
  * Returns an iterator for the given argument or throws an error.
