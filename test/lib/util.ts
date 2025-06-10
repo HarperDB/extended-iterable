@@ -52,8 +52,8 @@ export function createIterableObject(): Iterator<number> & { index: number } {
 			}
 
 			return {
-				value: this.index++,
-				done: false
+				done: false,
+				value: this.index++
 			};
 		}
 	};
@@ -90,14 +90,14 @@ export function createMixedAsyncIterableObject(): (Iterator<number> | AsyncItera
 
 			if (this.index % 2 === 0) {
 				return {
-					value: this.index++,
-					done: false
+					done: false,
+					value: this.index++
 				};
 			}
 
 			return Promise.resolve({
-				value: this.index++,
-				done: false
+				done: false,
+				value: this.index++
 			});
 		}
 	};

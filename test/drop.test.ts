@@ -10,66 +10,66 @@ import {
 
 describe('.drop()', () => {
 	describe('array', () => {
-		it('should return an iterable with the first `limit` items removed', () => {
+		it('should return an iterable skipping the first `count` items', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(iter.drop(2).asArray).toEqual([3, 4]);
 		});
 
-		it('should drop nothing if the limit is 0', () => {
+		it('should drop nothing if the count is 0', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(iter.drop(0).asArray).toEqual([1, 2, 3, 4]);
 		});
 
-		it('should return a transformed array with the first `limit` items removed', () => {
+		it('should return a transformed array skipping the first `count` items', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4], (value) => value * 2);
 			expect(iter.drop(2).asArray).toEqual([6, 8]);
 		});
 
-		it('should return an empty iterable if the limit is greater than the length of the array', () => {
+		it('should return an empty iterable if the count is greater than the length of the array', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(iter.drop(5).asArray).toEqual([]);
 		});
 
-		it('should throw an error if the limit is not a number', () => {
+		it('should throw an error if the count is not a number', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
-			expect(() => iter.drop('foo' as any)).toThrowError(new TypeError('limit is not a number'));
+			expect(() => iter.drop('foo' as any)).toThrowError(new TypeError('Count is not a number'));
 		});
 
-		it('should throw an error if the limit is negative', () => {
+		it('should throw an error if the count is negative', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
-			expect(() => iter.drop(-1)).toThrowError(new RangeError('limit must be a positive number'));
+			expect(() => iter.drop(-1)).toThrowError(new RangeError('Count must be a positive number'));
 		});
 	});
 
 	describe('iterable', () => {
-		it('should return an array with the first `limit` items removed', () => {
+		it('should return an array skipping the first `count` items', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
 			expect(iter.drop(2).asArray).toEqual([3, 4]);
 		});
 
-		it('should return a transformed array with the first `limit` items removed', () => {
+		it('should return a transformed array skipping the first `count` items', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]), (value) => value * 2);
 			expect(iter.drop(2).asArray).toEqual([6, 8]);
 		});
 
-		it('should return an empty array if the limit is greater than the length of the array', () => {
+		it('should return an empty array if the count is greater than the length of the array', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
 			expect(iter.drop(5).asArray).toEqual([]);
 		});
 	});
 
 	describe('iterable object', () => {
-		it('should return an array with the first `limit` items removed from an iterable object', () => {
+		it('should return an array skipping the first `count` items from an iterable object', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.drop(2).asArray).toEqual([2, 3]);
 		});
 
-		it('should return a transformed array with the first `limit` items removed from an iterable object', () => {
+		it('should return a transformed array skipping the first `count` items from an iterable object', () => {
 			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
 			expect(iter.drop(2).asArray).toEqual([4, 6]);
 		});
 
-		it('should return an empty array if the limit is greater than the length of the array from an iterable object', () => {
+		it('should return an empty array if the count is greater than the length of the array from an iterable object', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.drop(5).asArray).toEqual([]);
 		});
@@ -86,12 +86,12 @@ describe('.drop()', () => {
 	});
 
 	describe('generator function', () => {
-		it('should return an array with the first `limit` items removed from a generator function', () => {
+		it('should return an array skipping the first `count` items from a generator function', () => {
 			const iter = new ExtendedIterable(simpleGenerator);
 			expect(iter.drop(2).asArray).toEqual([3]);
 		});
 
-		it('should return a transformed item at a specific index from a generator function', () => {
+		it('should return a transformed array skipping the first `count` items from a generator function', () => {
 			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
 			expect(iter.drop(2).asArray).toEqual([6]);
 		});
@@ -107,17 +107,17 @@ describe('.drop()', () => {
 	});
 
 	describe('async generator function', () => {
-		it('should return an item at a specific index from an async generator function', async () => {
+		it('should return an array skipping the first `count` items from an async generator function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			expect(await iter.drop(2).asArray).toEqual([3]);
 		});
 
-		it('should return a transformed item at a specific index from an async generator function', async () => {
+		it('should return a transformed array skipping the first `count` items from an async generator function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
 			expect(await iter.drop(2).asArray).toEqual([6]);
 		});
 
-		it('should async loop over the iterable', async () => {
+		it('should async loop over the iterable skipping the first `count` items', async () => {
 			const items: number[] = [];
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			for await (const item of iter.drop(2)) {

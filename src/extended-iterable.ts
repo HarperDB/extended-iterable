@@ -1,6 +1,11 @@
 export type ValueTransformer<TInput, TOutput> = (value: TInput) => TOutput;
 
-export type IterableLike<T> = Iterator<T> | AsyncIterator<T> | Iterable<T> | (() => Generator<T>) | (() => AsyncGenerator<T>);
+export type IterableLike<T> =
+	| Iterator<T>
+	| AsyncIterator<T>
+	| Iterable<T>
+	| (() => Generator<T>)
+	| (() => AsyncGenerator<T>);
 
 /**
  * An iterable that provides a rich set of methods for working with ranges of
@@ -267,25 +272,25 @@ export class ExtendedIterable<T> {
 	}
 
 	/**
-	 * Returns a new iterable with the first `limit` items removed.
+	 * Returns a new iterable skipping the first `count` items.
 	 *
-	 * @param limit - The number of items to remove.
+	 * @param count - The number of items to skip.
 	 * @returns The new iterable.
 	 *
 	 * @example
 	 * ```typescript
 	 * const iterator = new ExtendedIterable([1, 2, 3]);
-	 * const items = iterator.drop(1);
+	 * const items = iterator.drop(2);
 	 * ```
 	 */
-	drop(limit: number): ExtendedIterable<T> {
-		if (typeof limit !== 'number') {
-			throw new TypeError('limit is not a number');
+	drop(count: number): ExtendedIterable<T> {
+		if (typeof count !== 'number') {
+			throw new TypeError('Count is not a number');
 		}
-		if (limit < 0) {
-			throw new RangeError('limit must be a positive number');
+		if (count < 0) {
+			throw new RangeError('Count must be a positive number');
 		}
-		if (limit === 0) {
+		if (count === 0) {
 			return this;
 		}
 
@@ -311,7 +316,7 @@ export class ExtendedIterable<T> {
 					return this.#asyncSkip(result);
 				}
 
-				while (!result.done && this.#itemsDropped < limit) {
+				while (!result.done && this.#itemsDropped < count) {
 					this.#itemsDropped++;
 					result = iterator.next();
 
@@ -329,7 +334,7 @@ export class ExtendedIterable<T> {
 				let currentResult = await result;
 
 				// continue skipping if needed
-				while (!currentResult.done && this.#itemsDropped < limit) {
+				while (!currentResult.done && this.#itemsDropped < count) {
 					this.#itemsDropped++;
 					currentResult = await iterator.next();
 				}
@@ -622,11 +627,10 @@ export class ExtendedIterable<T> {
 	}
 
 	/**
-	 * Returns a new iterable with the results of a callback function, then
-	 * flattens the results.
+	 * Returns a new iterable with the flattened results of a callback function.
 	 *
 	 * @param callback - The callback function to call for each result.
-	 * @returns The new iterable.
+	 * @returns The new iterable with the values flattened.
 	 *
 	 * @example
 	 * ```typescript
@@ -863,7 +867,9 @@ export class ExtendedIterable<T> {
 	 * @example
 	 * ```typescript
 	 * const iterator = new ExtendedIterable([1, 2, 3]);
-	 * const mapped = iterator.mapError(error => new Error('Error: ' + error.message));
+	 * const mapped = iterator
+	 *     .map(item => item * 2)
+	 *     .mapError(error => new Error('Error: ' + error.message));
 	 * ```
 	 */
 	mapError(catchCallback?: (error: Error | unknown) => Error | unknown | Promise<Error | unknown>): ExtendedIterable<T | Error> {
@@ -1322,6 +1328,7 @@ export class ExtendedIterable<T> {
 	 * ```typescript
 	 * const iterator = new ExtendedIterable([1, 2, 3]);
 	 * const taken = iterator.take(2);
+	 * console.log(taken.asArray); // [1, 2]
 	 * ```
 	 */
 	take(limit: number): ExtendedIterable<T> {
