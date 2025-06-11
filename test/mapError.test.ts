@@ -287,7 +287,7 @@ describe('.mapError()', () => {
 						next() {
 							return {
 								value: i++,
-								done: i === 6,
+								done: i === 8,
 							}
 						},
 						return() {
