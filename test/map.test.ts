@@ -87,6 +87,36 @@ describe('.map()', () => {
 			const iter = new ExtendedIterable(new Set([]));
 			expect(iter.map(item => item * 2).asArray).toEqual([]);
 		});
+		it('should call return() on source iterable', async () => {
+			let finished = false;
+			const iter = new ExtendedIterable({
+				[Symbol.iterator]() {
+					let i = 2;
+					return {
+						next() {
+							return {
+								value: i++,
+								done: i === 6,
+							}
+						},
+						return() {
+							finished = true;
+						},
+						throw() {
+							finished = true;
+						}
+					}
+				}
+			});
+			expect(await iter
+				.map(item => {
+					return item * 2;
+				})
+				.asArray
+			).toEqual([4, 6, 8]);
+			expect(finished).toEqual(true);
+		})
+
 	});
 
 	describe('iterable object', () => {

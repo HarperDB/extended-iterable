@@ -277,7 +277,41 @@ describe('.mapError()', () => {
 			expect(items).toEqual([2, new Error('error'), 6]);
 		});
 	});
-
+	describe('from custom iterable', () => {
+		it('should call propagate filter error and return() on source iterable', async () => {
+			let finished = false;
+			const iter = new ExtendedIterable({
+				[Symbol.iterator]() {
+					let i = 2;
+					return {
+						next() {
+							return {
+								value: i++,
+								done: i === 6,
+							}
+						},
+						return() {
+							finished = true;
+						},
+						throw() {
+							finished = true;
+						}
+					}
+				}
+			});
+			expect(await iter
+				.filter(item => {
+					if (item === 5) {
+						throw new Error('error');
+					}
+					return item * 2;
+				})
+				.mapError(error => error)
+				.asArray
+			).toEqual([2, 3, 4, new Error('test')]);
+			expect(finished).toEqual(true);
+		})
+	});
 	describe('async generator function', () => {
 		it('should return a mapped iterable with an error', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
