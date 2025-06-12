@@ -109,6 +109,29 @@ describe('.map()', () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
 			expect(await iterator.map(item => item * 2).asArray).toEqual([0, 2, 4, 6, 8, 10]);
 		});
+
+		// it('should call return() on source iterable', async () => {
+		// 	const obj = createIterableObject();
+		// 	const iter = new ExtendedIterable<number>(obj);
+		// 	expect(await iter
+		// 		.map(item => {
+		// 			return item * 2;
+		// 		})
+		// 		.asArray
+		// 	).toEqual([4, 6, 8]);
+		// 	expect(obj.returned).toEqual(true);
+		// });
+
+		// it('should call throw() on source iterable if the callback throws an error', async () => {
+		// 	const obj = createIterableObject();
+		// 	const iter = new ExtendedIterable<number>(obj);
+		// 	await expect(async () => {
+		// 		await iter.map(item => {
+		// 			throw new Error('error');
+		// 		}).asArray;
+		// 	}).rejects.toThrowError(new Error('error'));
+		// 	expect(obj.thrown).toEqual(true);
+		// });
 	});
 
 	describe('generator function', () => {

@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import {
+	createAsyncIterableObject,
 	createEmptyIterableObject,
 	createIterableObject,
 	createMixedAsyncIterableObject,
@@ -39,6 +40,42 @@ describe('.drop()', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(() => iter.drop(-1)).toThrowError(new RangeError('Count must be a positive number'));
 		});
+
+		it('should call return() on source iterable', () => {
+			const arr = [1, 2, 3, 4];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const dropped = new ExtendedIterable(arrIter, value => value * 2).drop(2);
+			const iterator = dropped[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 6 });
+			expect(iterator.next()).toEqual({ done: false, value: 8 });
+			assert(iterator.return);
+			const rval = iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
+		});
+
+		it('should call return() on source async iterable', async () => {
+			const arr = [1, 2, 3, 4];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const dropped = new ExtendedIterable(arrIter, value => value * 2).drop(2);
+			const iterator = dropped[Symbol.asyncIterator]();
+			expect(await iterator.next()).toEqual({ done: false, value: 6 });
+			expect(await iterator.next()).toEqual({ done: false, value: 8 });
+			assert(iterator.return);
+			const rval = await iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
+		});
 	});
 
 	describe('iterable', () => {
@@ -55,6 +92,17 @@ describe('.drop()', () => {
 		it('should return an empty array if the count is greater than the length of the array', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
 			expect(iter.drop(5).asArray).toEqual([]);
+		});
+
+		it('should call throw() on source iterable', () => {
+			const obj = new Set([1, 2, 3, 4]);
+			const iterable = new ExtendedIterable(obj).drop(2);
+			const iterator = iterable[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 3 });
+			expect(() => {
+				assert(iterator.throw);
+				iterator.throw(new Error('error'));
+			}).toThrowError(new Error('error'));
 		});
 	});
 
@@ -82,6 +130,32 @@ describe('.drop()', () => {
 		it('should return an empty iterable if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.drop(2).asArray).toEqual([]);
+		});
+
+		it('should call throw() on source iterable', () => {
+			const obj = createIterableObject();
+			const iterable = new ExtendedIterable(obj).drop(2);
+			const iterator = iterable[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 2 });
+			expect(iterator.next()).toEqual({ done: false, value: 3 });
+			expect(() => {
+				assert(iterator.throw);
+				iterator.throw(new Error('error'));
+			}).toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
+		});
+
+		it('should call throw() on source async iterable', async () => {
+			const obj = createAsyncIterableObject();
+			const iterable = new ExtendedIterable(obj).drop(2);
+			const iterator = iterable[Symbol.asyncIterator]();
+			expect(await iterator.next()).toEqual({ done: false, value: 2 });
+			expect(await iterator.next()).toEqual({ done: false, value: 3 });
+			expect(async () => {
+				assert(iterator.throw);
+				await iterator.throw(new Error('error'));
+			}).rejects.toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
 		});
 	});
 

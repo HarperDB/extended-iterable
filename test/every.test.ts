@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
@@ -89,6 +89,42 @@ describe('.every()', () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should call return() on source iterable', () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const every = new ExtendedIterable(arrIter).every(item => item < 5);
+			const iterator = every[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 2 });
+			expect(iterator.next()).toEqual({ done: false, value: 4 });
+			assert(iterator.return);
+			const rval = iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
+		});
+
+		it('should call return() on source async iterable', async () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const every = new ExtendedIterable(arrIter).every(item => item < 5);
+			const iterator = every[Symbol.asyncIterator]();
+			expect(await iterator.next()).toEqual({ done: false, value: 2 });
+			expect(await iterator.next()).toEqual({ done: false, value: 4 });
+			assert(iterator.return);
+			const rval = await iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
 		});
 	});
 

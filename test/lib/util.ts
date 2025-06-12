@@ -40,9 +40,15 @@ export async function* emptyAsyncGenerator() {
  *
  * @returns The iterable object.
  */
-export function createIterableObject(): Iterator<number> & { index: number } {
+export function createIterableObject(): Iterator<number> & {
+	index: number;
+	returned: boolean;
+	thrown: boolean;
+} {
 	return {
 		index: 0,
+		returned: false,
+		thrown: false,
 		next() {
 			if (this.index > 3) {
 				return {
@@ -55,6 +61,52 @@ export function createIterableObject(): Iterator<number> & { index: number } {
 				done: false,
 				value: this.index++
 			};
+		},
+		return() {
+			this.returned = true;
+			return { done: true, value: undefined };
+		},
+		throw(err) {
+			this.thrown = true;
+			throw err;
+		}
+	};
+}
+
+/**
+ * Creates an iterable object that produces the numbers 0, 1, 2, 3.
+ *
+ * @returns The iterable object.
+ */
+export function createAsyncIterableObject(): AsyncIterator<number> & {
+	index: number;
+	returned: boolean;
+	thrown: boolean;
+} {
+	return {
+		index: 0,
+		returned: false,
+		thrown: false,
+		async next() {
+			if (this.index > 3) {
+				return {
+					done: true,
+					value: undefined
+				};
+			}
+
+			return {
+				done: false,
+				value: this.index++
+			};
+		},
+		async return() {
+			this.returned = true;
+			return { done: true, value: undefined };
+		},
+		async throw(err) {
+			this.thrown = true;
+			throw err;
 		}
 	};
 }

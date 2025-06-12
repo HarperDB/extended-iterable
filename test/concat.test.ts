@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import {
+	createAsyncIterableObject,
 	createEmptyIterableObject,
 	createIterableObject,
 	createMixedAsyncIterableObject,
@@ -16,7 +17,7 @@ describe('.concat()', () => {
 		});
 
 		it('should concatenate two arrays with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3], (value) => value * 2);
+			const iter = new ExtendedIterable([1, 2, 3], value => value * 2);
 			expect(iter.concat([4, 5, 6]).asArray).toEqual([2, 4, 6, 4, 5, 6]);
 		});
 
@@ -33,6 +34,42 @@ describe('.concat()', () => {
 		it('should error if the source is not iterable-like', () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
 			expect(() => iter.concat(null as any)).toThrowError(new TypeError('Argument is not iterable'));
+		});
+
+		it('should call return() on source iterable', () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const concatenated = new ExtendedIterable(arrIter, value => value * 2).concat([4, 5, 6]);
+			const iterator = concatenated[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 2 });
+			expect(iterator.next()).toEqual({ done: false, value: 4 });
+			assert(iterator.return);
+			const rval = iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
+		});
+
+		it('should call return() on source async iterable', async () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let returned = false;
+			arrIter.return = () => {
+				returned = true;
+				return { done: true, value: undefined };
+			};
+			const concatenated = new ExtendedIterable(arrIter, value => value * 2).concat([4, 5, 6]);
+			const iterator = concatenated[Symbol.asyncIterator]();
+			expect(await iterator.next()).toEqual({ done: false, value: 2 });
+			expect(await iterator.next()).toEqual({ done: false, value: 4 });
+			assert(iterator.return);
+			const rval = await iterator.return();
+			expect(rval).toEqual({ done: true, value: undefined });
+			expect(returned).toBe(true);
 		});
 	});
 
@@ -56,6 +93,19 @@ describe('.concat()', () => {
 			const iter = new ExtendedIterable(new Set<number>([]));
 			expect(iter.concat(new Set([1, 2, 3])).asArray).toEqual([1, 2, 3]);
 		});
+
+		it('should call throw() on source iterable', () => {
+			const obj = new Set([1, 2, 3]);
+			const obj2 = new Set([4, 5, 6]);
+			const iterable = new ExtendedIterable(obj).concat(obj2);
+			const iterator = iterable[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 1 });
+			expect(iterator.next()).toEqual({ done: false, value: 2 });
+			expect(() => {
+				assert(iterator.throw);
+				iterator.throw(new Error('error'));
+			}).toThrowError(new Error('error'));
+		});
 	});
 
 	describe('iterable object', () => {
@@ -77,6 +127,34 @@ describe('.concat()', () => {
 		it('should return an iterable with mixed async and sync values', async () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
 			expect(await iterator.concat(createMixedAsyncIterableObject()).asArray).toEqual([0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5]);
+		});
+
+		it('should call throw() on source iterable', () => {
+			const obj = createIterableObject();
+			const obj2 = createIterableObject();
+			const iterable = new ExtendedIterable(obj).concat(obj2);
+			const iterator = iterable[Symbol.iterator]();
+			expect(iterator.next()).toEqual({ done: false, value: 0 });
+			expect(iterator.next()).toEqual({ done: false, value: 1 });
+			expect(() => {
+				assert(iterator.throw);
+				iterator.throw(new Error('error'));
+			}).toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
+		});
+
+		it('should call throw() on source async iterable', async () => {
+			const obj = createAsyncIterableObject();
+			const obj2 = createAsyncIterableObject();
+			const iterable = new ExtendedIterable(obj).concat(obj2);
+			const iterator = iterable[Symbol.asyncIterator]();
+			expect(await iterator.next()).toEqual({ done: false, value: 0 });
+			expect(await iterator.next()).toEqual({ done: false, value: 1 });
+			expect(async () => {
+				assert(iterator.throw);
+				await iterator.throw(new Error('error'));
+			}).rejects.toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
 		});
 	});
 

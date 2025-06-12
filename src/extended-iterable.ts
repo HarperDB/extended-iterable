@@ -8,6 +8,34 @@ export type IterableLike<T> =
 	| (() => AsyncGenerator<T>);
 
 /**
+ * The base class for internal iterators.
+ */
+class BaseIterator<T> implements Iterator<T>, AsyncIterator<T> {
+	protected iterator: Iterator<T> | AsyncIterator<T>;
+	protected transformer: ValueTransformer<any, T> | undefined;
+
+	constructor(iterator: Iterator<T> | AsyncIterator<T>, transformer?: ValueTransformer<any, T>) {
+		this.iterator = iterator;
+		this.transformer = transformer;
+	}
+
+	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		return this.iterator.next();
+	}
+
+	return(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		return this.iterator.return ? this.iterator.return() : { done: true, value: undefined };
+	}
+
+	throw(err: unknown): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.iterator.throw) {
+			return this.iterator.throw(err);
+		}
+		throw err;
+	}
+}
+
+/**
  * An iterable that provides a rich set of methods for working with ranges of
  * items.
  */
@@ -60,21 +88,6 @@ export class ExtendedIterable<T> {
 	[Symbol.asyncIterator](): AsyncIterator<T> {
 		this.#iterator.async = true;
 		return this.#iterator as AsyncIterator<T>;
-	}
-
-	/**
-	 * Creates an array from an iterable or async iterable.
-	 *
-	 * @param iterator - The iterable or async iterable to create an array from.
-	 * @returns The array or promise of the array.
-	 *
-	 * @example
-	 * ```typescript
-	 * const array = ExtendedIterable.from([1, 2, 3]);
-	 * ```
-	 */
-	static from<T>(iterator: IterableLike<T>, transformer?: ValueTransformer<any, T>): Array<T> | Promise<Array<T>> {
-		return new ExtendedIterable(iterator, transformer).asArray;
 	}
 
 	/**
@@ -218,56 +231,68 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	concat(other: IterableLike<T>): ExtendedIterable<T> {
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
-		const secondIterator = resolveIterator(other);
+		return new ExtendedIterable(
+			new ExtendedIterable.#ConcatIterator(
+				this.#iterator,
+				resolveIterator(other),
+				this.#transformer
+			)
+		);
+	}
 
-		class ConcatIterator implements Iterator<T>, AsyncIterator<T> {
-			#firstIteratorDone = false;
+	static #ConcatIterator = class ConcatIterator<T> extends BaseIterator<T> {
+		#firstIteratorDone = false;
+		#secondIterator: Iterator<T> | AsyncIterator<T>;
 
-			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				// iterate through the original iterator first
-				if (!this.#firstIteratorDone) {
-					const result = iterator.next();
-					if (result instanceof Promise) {
-						return result.then((result) => this.#processFirstResult(result));
-					}
-					return this.#processFirstResult(result);
-				}
-
-				// then iterate through the second iterator
-				return this.#getNextFromOther();
-			}
-
-			#processFirstResult(result: IteratorResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> {
-				if (result.done) {
-					this.#firstIteratorDone = true;
-					return this.#getNextFromOther();
-				}
-				return this.#processResult(result, transformer);
-			}
-
-			#getNextFromOther(): IteratorResult<T> | Promise<IteratorResult<T>> {
-				const result = secondIterator.next();
-				if (result instanceof Promise) {
-					return result.then(this.#processResult);
-				}
-				return this.#processResult(result);
-			}
-
-			#processResult(result: IteratorResult<T>, transformer?: ValueTransformer<T, T>): IteratorResult<T> {
-				if (result.done) {
-					return result;
-				}
-				return {
-					done: false,
-					value: transformer ? transformer(result.value) : result.value
-				};
-			}
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			secondIterator: Iterator<T> | AsyncIterator<T>,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#secondIterator = secondIterator;
 		}
 
-		return new ExtendedIterable(new ConcatIterator());
-	}
+		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+			// iterate through the original iterator first
+			if (!this.#firstIteratorDone) {
+				const result = super.next();
+				if (result instanceof Promise) {
+					return result.then((result) => this.#processFirstResult(result));
+				}
+				return this.#processFirstResult(result);
+			}
+
+			// then iterate through the second iterator
+			return this.#getNextFromOther();
+		}
+
+		#processFirstResult(result: IteratorResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> {
+			if (result.done) {
+				this.#firstIteratorDone = true;
+				return this.#getNextFromOther();
+			}
+			return this.#processResult(result, this.transformer);
+		}
+
+		#getNextFromOther(): IteratorResult<T> | Promise<IteratorResult<T>> {
+			const result = this.#secondIterator.next();
+			if (result instanceof Promise) {
+				return result.then(this.#processResult);
+			}
+			return this.#processResult(result);
+		}
+
+		#processResult(result: IteratorResult<T>, transformer?: ValueTransformer<T, T>): IteratorResult<T> {
+			if (result.done) {
+				return result;
+			}
+			return {
+				done: false,
+				value: transformer ? transformer(result.value) : result.value
+			};
+		}
+	};
 
 	/**
 	 * Returns a new iterable skipping the first `count` items.
@@ -292,68 +317,73 @@ export class ExtendedIterable<T> {
 			return this;
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.#DropIterator(this.#iterator, count, this.#transformer)
+		);
+	}
 
-		class DropIterator implements Iterator<T>, AsyncIterator<T> {
-			#itemsDropped = 0;
-			#doneSkipping = false;
+	static #DropIterator = class DropIterator<T> extends BaseIterator<T> {
+		#itemsDropped = 0;
+		#doneSkipping = false;
+		#count: number;
 
-			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				if (this.#doneSkipping) {
-					const result = iterator.next();
-					if (result instanceof Promise) {
-						return result.then(r => this.#transformResult(r));
-					}
-					return this.#transformResult(result);
-				}
+		constructor(iterator: Iterator<T> | AsyncIterator<T>, count: number, transformer?: ValueTransformer<any, T>) {
+			super(iterator, transformer);
+			this.#count = count;
+		}
 
-				let result = iterator.next();
-
+		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+			if (this.#doneSkipping) {
+				const result = super.next();
 				if (result instanceof Promise) {
-					return this.#asyncSkip(result);
+					return result.then(r => this.#transformResult(r));
 				}
-
-				while (!result.done && this.#itemsDropped < count) {
-					this.#itemsDropped++;
-					result = iterator.next();
-
-					// handle case where iterator becomes async mid-iteration
-					if (result instanceof Promise) {
-						return this.#asyncSkip(result);
-					}
-				}
-
-				this.#doneSkipping = true;
 				return this.#transformResult(result);
 			}
 
-			async #asyncSkip(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-				let currentResult = await result;
+			let result = super.next();
 
-				// continue skipping if needed
-				while (!currentResult.done && this.#itemsDropped < count) {
-					this.#itemsDropped++;
-					currentResult = await iterator.next();
-				}
-
-				this.#doneSkipping = true;
-				return this.#transformResult(currentResult);
+			if (result instanceof Promise) {
+				return this.#asyncSkip(result);
 			}
 
-			#transformResult(result: IteratorResult<T>): IteratorResult<T> {
-				if (result.done) {
-					return result;
+			while (!result.done && this.#itemsDropped < this.#count) {
+				this.#itemsDropped++;
+				result = super.next();
+
+				// handle case where iterator becomes async mid-iteration
+				if (result instanceof Promise) {
+					return this.#asyncSkip(result);
 				}
-				return {
-					done: false,
-					value: transformer ? transformer(result.value) : result.value
-				};
 			}
+
+			this.#doneSkipping = true;
+			return this.#transformResult(result);
 		}
 
-		return new ExtendedIterable(new DropIterator());
-	}
+		async #asyncSkip(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
+			let currentResult = await result;
+
+			// continue skipping if needed
+			while (!currentResult.done && this.#itemsDropped < this.#count) {
+				this.#itemsDropped++;
+				currentResult = await super.next();
+			}
+
+			this.#doneSkipping = true;
+			return this.#transformResult(currentResult);
+		}
+
+		#transformResult(result: IteratorResult<T>): IteratorResult<T> {
+			if (result.done) {
+				return result;
+			}
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(result.value) : result.value
+			};
+		}
+	};
 
 	/**
 	 * Returns `true` if the callback returns `true` for every item of the
@@ -470,11 +500,11 @@ export class ExtendedIterable<T> {
 		const iterator = this.#iterator;
 		const transformer = this.#transformer;
 
-		class FilterIterator implements Iterator<T>, AsyncIterator<T> {
+		class FilterIterator extends BaseIterator<T> {
 			#index = 0;
 
 			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				let result = iterator.next();
+				let result = super.next();
 
 				// async handling
 				if (result instanceof Promise) {
@@ -483,29 +513,12 @@ export class ExtendedIterable<T> {
 
 				// sync handling
 				while (!result.done) {
-					const value = transformer ? transformer(result.value) : result.value;
-					const keep = callback(value, this.#index++);
-
-					if (keep instanceof Promise) {
-						return keep.then(keep => {
-							if (keep) {
-								return {
-									done: false,
-									value
-								};
-							}
-							return this.next();
-						});
+					const rval = this.#processResult(result);
+					if (rval) {
+						return rval;
 					}
 
-					if (keep) {
-						return {
-							done: false,
-							value
-						};
-					}
-
-					result = iterator.next();
+					result = super.next();
 
 					// handle sync-to-async transition
 					if (result instanceof Promise) {
@@ -520,11 +533,28 @@ export class ExtendedIterable<T> {
 				let currentResult = await result;
 
 				while (!currentResult.done) {
-					const value = transformer ? transformer(currentResult.value) : currentResult.value;
-					const keep = callback(value, this.#index++);
+					const rval = this.#processResult(currentResult);
+					if (rval) {
+						return rval;
+					}
+					currentResult = await this.next();
+				}
 
-					if (keep instanceof Promise) {
-						return keep.then(keep => {
+				return currentResult;
+			}
+
+			#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
+				const value = transformer ? transformer(result.value) : result.value;
+				let keep: boolean | Promise<boolean>;
+				try {
+					keep = callback(value, this.#index++);
+				} catch (err) {
+					return this.throw(err);
+				}
+
+				if (keep instanceof Promise) {
+					return keep
+						.then(keep => {
 							if (keep) {
 								return {
 									done: false,
@@ -532,23 +562,20 @@ export class ExtendedIterable<T> {
 								};
 							}
 							return this.next();
-						});
-					}
-
-					if (keep) {
-						return {
-							done: false,
-							value
-						};
-					}
-					currentResult = await this.next();
+						})
+						.catch(err => this.throw(err));
 				}
 
-				return currentResult;
+				if (keep) {
+					return {
+						done: false,
+						value
+					};
+				}
 			}
 		}
 
-		return new ExtendedIterable(new FilterIterator());
+		return new ExtendedIterable(new FilterIterator(iterator));
 	}
 
 	/**
