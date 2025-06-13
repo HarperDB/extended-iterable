@@ -777,76 +777,85 @@ export class ExtendedIterable<T> {
 			throw new TypeError('Callback is not a function');
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.FlatMapIterator(this.#iterator, callback, this.#transformer)
+		);
+	}
 
-		class FlatMapIterator implements Iterator<U>, AsyncIterator<U> {
-			#index = 0;
-			#currentSubIterator: Iterator<U> | null = null;
+	static FlatMapIterator = class FlatMapIterator<T, U> extends BaseIterator<T> {
+		#index = 0;
+		#currentSubIterator: Iterator<U> | null = null;
+		#callback: (value: T, index: number) => U | U[] | Iterable<U> | Promise<U | U[] | Iterable<U>>;
 
-			next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			callback: (value: T, index: number) => U | U[] | Iterable<U> | Promise<U | U[] | Iterable<U>>,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#callback = callback;
+		}
+
+		next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
+			return this.#getNext();
+		}
+
+		#getNext(): IteratorResult<U> | Promise<IteratorResult<U>> {
+			// try to get value from current sub-iterator first
+			if (this.#currentSubIterator) {
+				const subResult = this.#currentSubIterator.next();
+				if (!subResult.done) {
+					return subResult;
+				}
+				this.#currentSubIterator = null;
+			}
+
+			return this.#getNextFromMain();
+		}
+
+		#getNextFromMain(): IteratorResult<U> | Promise<IteratorResult<U>> {
+			const mainResult = super.next();
+
+			if (mainResult instanceof Promise) {
+				return mainResult.then(result => this.#processMainResult(result));
+			}
+
+			return this.#processMainResult(mainResult);
+		}
+
+		#processMainResult(result: IteratorResult<T>): IteratorResult<U> | Promise<IteratorResult<U>> {
+			if (result.done) {
+				return { done: true, value: undefined as any };
+			}
+
+			const callbackResult = this.#callback(this.transformer ? this.transformer(result.value) : result.value, this.#index++);
+
+			// handle promise from callback
+			if (callbackResult instanceof Promise) {
+				return callbackResult.then(resolvedResult => this.#processCallbackResult(resolvedResult));
+			}
+
+			return this.#processCallbackResult(callbackResult);
+		}
+
+		#processCallbackResult(callbackResult: U | U[] | Iterable<U>): IteratorResult<U> | Promise<IteratorResult<U>> {
+			// create sub-iterator if callback result is iterable
+			if (
+				Array.isArray(callbackResult) ||
+				typeof callbackResult?.[Symbol.iterator] === 'function'
+			) {
+				this.#currentSubIterator = callbackResult[Symbol.iterator]();
+				// Get first value from new sub-iterator
 				return this.#getNext();
 			}
 
-			#getNext(): IteratorResult<U> | Promise<IteratorResult<U>> {
-				// try to get value from current sub-iterator first
-				if (this.#currentSubIterator) {
-					const subResult = this.#currentSubIterator.next();
-					if (!subResult.done) {
-						return subResult;
-					}
-					this.#currentSubIterator = null;
-				}
-
-				return this.#getNextFromMain();
-			}
-
-			#getNextFromMain(): IteratorResult<U> | Promise<IteratorResult<U>> {
-				const mainResult = iterator.next();
-
-				if (mainResult instanceof Promise) {
-					return mainResult.then(result => this.#processMainResult(result));
-				}
-
-				return this.#processMainResult(mainResult);
-			}
-
-			#processMainResult(result: IteratorResult<T>): IteratorResult<U> | Promise<IteratorResult<U>> {
-				if (result.done) {
-					return { done: true, value: undefined as any };
-				}
-
-				const callbackResult = callback(transformer ? transformer(result.value) : result.value, this.#index++);
-
-				// handle promise from callback
-				if (callbackResult instanceof Promise) {
-					return callbackResult.then(resolvedResult => this.#processCallbackResult(resolvedResult));
-				}
-
-				return this.#processCallbackResult(callbackResult);
-			}
-
-			#processCallbackResult(callbackResult: U | U[] | Iterable<U>): IteratorResult<U> | Promise<IteratorResult<U>> {
-				// create sub-iterator if callback result is iterable
-				if (
-					Array.isArray(callbackResult) ||
-					typeof callbackResult?.[Symbol.iterator] === 'function'
-				) {
-					this.#currentSubIterator = callbackResult[Symbol.iterator]();
-					// Get first value from new sub-iterator
-					return this.#getNext();
-				}
-
-				// not iterable, return as single value
-				return {
-					done: false,
-					value: callbackResult as U
-				};
-			}
+			// not iterable, return as single value
+			return {
+				done: false,
+				value: callbackResult as U
+			};
 		}
-
-		return new ExtendedIterable(new FlatMapIterator());
-	}
+	};
 
 	/**
 	 * Calls a function for each item of the iterable.
@@ -928,64 +937,73 @@ export class ExtendedIterable<T> {
 			throw new TypeError('Callback is not a function');
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.MapIterator(this.#iterator, callback, this.#transformer)
+		);
+	}
 
-		class MapIterator implements Iterator<U>, AsyncIterator<U> {
-			#index = 0;
+	static MapIterator = class MapIterator<T, U> extends BaseIterator<T> {
+		#index = 0;
+		#callback: (value: T, index: number) => U | Promise<U>;
 
-			next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
-				const result = iterator.next();
-
-				// async handling
-				if (result instanceof Promise) {
-					return this.#asyncMap(result);
-				}
-
-				// sync handling
-				if (result.done) {
-					return result;
-				}
-
-				const mappedValue = callback(transformer ? transformer(result.value) : result.value, this.#index++);
-
-				if (mappedValue instanceof Promise) {
-					return mappedValue.then(value => ({
-						done: false,
-						value
-					}));
-				}
-
-				return {
-					done: false,
-					value: mappedValue
-				};
-			}
-
-			async #asyncMap(result: Promise<IteratorResult<T>>): Promise<IteratorResult<U>> {
-				const currentResult = await result;
-				if (currentResult.done) {
-					return currentResult as IteratorResult<U>;
-				}
-
-				const mappedValue = callback(transformer ? transformer(currentResult.value) : currentResult.value, this.#index++);
-
-				if (mappedValue instanceof Promise) {
-					return mappedValue.then(value => ({
-						done: false,
-						value
-					}));
-				}
-
-				return {
-					done: false,
-					value: mappedValue
-				};
-			}
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			callback: (value: T, index: number) => U | Promise<U>,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#callback = callback;
 		}
 
-		return new ExtendedIterable(new MapIterator());
-	}
+		next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
+			const result = super.next();
+
+			// async handling
+			if (result instanceof Promise) {
+				return this.#asyncMap(result);
+			}
+
+			// sync handling
+			if (result.done) {
+				return result;
+			}
+
+			const mappedValue = this.#callback(this.transformer ? this.transformer(result.value) : result.value, this.#index++);
+
+			if (mappedValue instanceof Promise) {
+				return mappedValue.then(value => ({
+					done: false,
+					value
+				}));
+			}
+
+			return {
+				done: false,
+				value: mappedValue
+			};
+		}
+
+		async #asyncMap(result: Promise<IteratorResult<T>>): Promise<IteratorResult<U>> {
+			const currentResult = await result;
+			if (currentResult.done) {
+				return currentResult as IteratorResult<U>;
+			}
+
+			const mappedValue = this.#callback(this.transformer ? this.transformer(currentResult.value) : currentResult.value, this.#index++);
+
+			if (mappedValue instanceof Promise) {
+				return mappedValue.then(value => ({
+					done: false,
+					value
+				}));
+			}
+
+			return {
+				done: false,
+				value: mappedValue
+			};
+		}
+	};
 
 	/**
 	 * Catch errors thrown during iteration and allow iteration to continue.
@@ -1006,85 +1024,95 @@ export class ExtendedIterable<T> {
 			throw new TypeError('Callback is not a function');
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.ErrorMappingIterator(this.#iterator, catchCallback, this.#transformer)
+		);
+	}
 
-		class ErrorMappingIterator implements Iterator<T | Error>, AsyncIterator<T | Error> {
-			next(): IteratorResult<T | Error> | Promise<IteratorResult<T | Error>> | any {
-				try {
-					const result = iterator.next();
+	static ErrorMappingIterator = class ErrorMappingIterator<T> extends BaseIterator<T> {
+		#catchCallback?: (error: Error | unknown) => Error | unknown | Promise<Error | unknown>;
 
-					// async handling
-					if (result instanceof Promise) {
-						return this.#asyncNext(result);
-					}
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			catchCallback?: (error: Error | unknown) => Error | unknown | Promise<Error | unknown>,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#catchCallback = catchCallback;
+		}
 
-					// sync handling
-					if (result.done) {
-						return result;
-					}
+		next(): IteratorResult<T | Error> | Promise<IteratorResult<T | Error>> | any {
+			try {
+				const result = super.next();
 
-					return {
-						done: false,
-						value: transformer ? transformer(result.value) : result.value
-					};
-				} catch (error: unknown) {
-					// handle sync errors - return error as value and continue on next call
-					if (catchCallback) {
-						const err = catchCallback(error);
-						// if catchCallback returns a promise, switch to async handling
-						if (err instanceof Promise) {
-							return err.then(resolvedErr => ({
-								done: false,
-								value: resolvedErr
-							}));
-						}
-						return {
+				// async handling
+				if (result instanceof Promise) {
+					return this.#asyncNext(result);
+				}
+
+				// sync handling
+				if (result.done) {
+					return result;
+				}
+
+				return {
+					done: false,
+					value: this.transformer ? this.transformer(result.value) : result.value
+				};
+			} catch (error: unknown) {
+				// handle sync errors - return error as value and continue on next call
+				if (this.#catchCallback) {
+					const err = this.#catchCallback(error);
+					// if catchCallback returns a promise, switch to async handling
+					if (err instanceof Promise) {
+						return err.then(resolvedErr => ({
 							done: false,
-							value: err
-						};
+							value: resolvedErr
+						}));
 					}
 					return {
 						done: false,
-						value: error
+						value: err
 					};
 				}
-			}
-
-			async #asyncNext(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T | Error>> {
-				try {
-					const currentResult = await result;
-
-					if (currentResult.done) {
-						return currentResult as IteratorResult<T | Error>;
-					}
-
-					// apply transformer if present
-					return {
-						done: false,
-						value: transformer ? transformer(currentResult.value) : currentResult.value
-					};
-				} catch (error) {
-					// handle async errors - return error as value
-					if (catchCallback) {
-						const err = catchCallback(error);
-						// await the result if it's a promise
-						const resolvedErr = err instanceof Promise ? await err : err;
-						return {
-							done: false,
-							value: resolvedErr as any
-						};
-					}
-					return {
-						done: false,
-						value: error as any
-					};
-				}
+				return {
+					done: false,
+					value: error
+				};
 			}
 		}
 
-		return new ExtendedIterable(new ErrorMappingIterator());
-	}
+		async #asyncNext(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T | Error>> {
+			try {
+				const currentResult = await result;
+
+				if (currentResult.done) {
+					return currentResult as IteratorResult<T | Error>;
+				}
+
+				// apply transformer if present
+				return {
+					done: false,
+					value: this.transformer ? this.transformer(currentResult.value) : currentResult.value
+				};
+			} catch (error) {
+				// handle async errors - return error as value
+				if (this.#catchCallback) {
+					const err = this.#catchCallback(error);
+					// await the result if it's a promise
+					const resolvedErr = err instanceof Promise ? await err : err;
+					return {
+						done: false,
+						value: resolvedErr as any
+					};
+				}
+				return {
+					done: false,
+					value: error as any
+				};
+			}
+		}
+	};
 
 	/**
 	 * Reduces the iterable to a single value.
@@ -1249,106 +1277,118 @@ export class ExtendedIterable<T> {
 			return new ExtendedIterable(function*() {}());
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.SliceIterator(this.#iterator, startIndex, endIndex, this.#transformer)
+		);
+	}
 
-		class SliceIterator implements Iterator<T>, AsyncIterator<T> {
-			#index = 0;
-			#yielding = false;
+	static SliceIterator = class SliceIterator<T> extends BaseIterator<T> {
+		#index = 0;
+		#yielding = false;
+		#startIndex: number;
+		#endIndex: number;
 
-			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				// skip to start if not already yielding
-				if (!this.#yielding) {
-					return this.#skipToStart();
-				}
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			startIndex: number,
+			endIndex: number,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#startIndex = startIndex;
+			this.#endIndex = endIndex;
+		}
 
-				// Check if we've reached the end
-				if (endIndex !== undefined && this.#index >= endIndex) {
-					return { done: true, value: undefined };
-				}
-
-				return this.#getNextValue();
+		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+			// skip to start if not already yielding
+			if (!this.#yielding) {
+				return this.#skipToStart();
 			}
 
-			#skipToStart(): IteratorResult<T> | Promise<IteratorResult<T>> {
-				// skip elements synchronously if possible
-				while (this.#index < startIndex) {
-					const result = iterator.next();
-
-					// Handle async transition during skipping
-					if (result instanceof Promise) {
-						return this.#asyncSkipAndGetFirst(result);
-					}
-
-					if (result.done) {
-						return result;
-					}
-					this.#index++;
-				}
-
-				this.#yielding = true;
-				return this.#getNextValue();
+			// Check if we've reached the end
+			if (this.#endIndex !== undefined && this.#index >= this.#endIndex) {
+				return { done: true, value: undefined };
 			}
 
-			async #asyncSkipAndGetFirst(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-				let currentResult = await result;
+			return this.#getNextValue();
+		}
 
-				// continue skipping elements
-				while (!currentResult.done && this.#index < startIndex) {
-					this.#index++;
-					currentResult = await iterator.next();
-				}
+		#skipToStart(): IteratorResult<T> | Promise<IteratorResult<T>> {
+			// skip elements synchronously if possible
+			while (this.#index < this.#startIndex) {
+				const result = this.iterator.next();
 
-				this.#yielding = true;
-
-				// if iterator is done or we've reached the end index, return done
-				if (currentResult.done || (endIndex !== undefined && this.#index >= endIndex)) {
-					return currentResult;
-				}
-
-				// process the current result
-				this.#index++;
-				return {
-					done: false,
-					value: transformer ? transformer(currentResult.value) : currentResult.value
-				};
-			}
-
-			#getNextValue(): IteratorResult<T> | Promise<IteratorResult<T>> {
-				const result = iterator.next();
-
+				// Handle async transition during skipping
 				if (result instanceof Promise) {
-					return this.#asyncGetNextValue(result);
+					return this.#asyncSkipAndGetFirst(result);
 				}
 
 				if (result.done) {
 					return result;
 				}
-
 				this.#index++;
-				return {
-					done: false,
-					value: transformer ? transformer(result.value) : result.value
-				};
 			}
 
-			async #asyncGetNextValue(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-				const currentResult = await result;
-
-				if (currentResult.done) {
-					return currentResult;
-				}
-
-				this.#index++;
-				return {
-					done: false,
-					value: transformer ? transformer(currentResult.value) : currentResult.value
-				};
-			}
+			this.#yielding = true;
+			return this.#getNextValue();
 		}
 
-		return new ExtendedIterable(new SliceIterator());
-	}
+		async #asyncSkipAndGetFirst(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
+			let currentResult = await result;
+
+			// continue skipping elements
+			while (!currentResult.done && this.#index < this.#startIndex) {
+				this.#index++;
+				currentResult = await super.next();
+			}
+
+			this.#yielding = true;
+
+			// if iterator is done or we've reached the end index, return done
+			if (currentResult.done || (this.#endIndex !== undefined && this.#index >= this.#endIndex)) {
+				return currentResult;
+			}
+
+			// process the current result
+			this.#index++;
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(currentResult.value) : currentResult.value
+			};
+		}
+
+		#getNextValue(): IteratorResult<T> | Promise<IteratorResult<T>> {
+			const result = super.next();
+
+			if (result instanceof Promise) {
+				return this.#asyncGetNextValue(result);
+			}
+
+			if (result.done) {
+				return result;
+			}
+
+			this.#index++;
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(result.value) : result.value
+			};
+		}
+
+		async #asyncGetNextValue(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
+			const currentResult = await result;
+
+			if (currentResult.done) {
+				return currentResult;
+			}
+
+			this.#index++;
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(currentResult.value) : currentResult.value
+			};
+		}
+	};
 
 	/**
 	 * Returns `true` if the callback returns `true` for any item of the
@@ -1485,56 +1525,66 @@ export class ExtendedIterable<T> {
 		if (limit < 0) {
 			throw new RangeError('limit must be a positive number');
 		}
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
 
-		class TakeIterator implements Iterator<T>, AsyncIterator<T> {
-			#count = 0;
+		return new ExtendedIterable(
+			new ExtendedIterable.TakeIterator(this.#iterator, limit, this.#transformer)
+		);
+	}
 
-			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				const result = iterator.next();
+	static TakeIterator = class TakeIterator<T> extends BaseIterator<T> {
+		#count = 0;
+		#limit: number;
 
-				// async handling
-				if (result instanceof Promise) {
-					return this.#asyncNext(result);
-				}
-
-				// sync handling
-				if (result.done) {
-					return result;
-				}
-
-				if (this.#count >= limit) {
-					return { done: true, value: undefined };
-				}
-
-				this.#count++;
-				return {
-					done: false,
-					value: transformer ? transformer(result.value) : result.value
-				};
-			}
-
-			async #asyncNext(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-				const currentResult = await result;
-				if (currentResult.done) {
-					return currentResult;
-				}
-
-				if (this.#count >= limit) {
-					return { done: true, value: undefined };
-				}
-
-				this.#count++;
-				return {
-					done: false,
-					value: transformer ? transformer(currentResult.value) : currentResult.value
-				};
-			}
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			limit: number,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#limit = limit;
 		}
 
-		return new ExtendedIterable(new TakeIterator());
-	}
+		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+			const result = super.next();
+
+			// async handling
+			if (result instanceof Promise) {
+				return this.#asyncNext(result);
+			}
+
+			// sync handling
+			if (result.done) {
+				return result;
+			}
+
+			if (this.#count >= this.#limit) {
+				return { done: true, value: undefined };
+			}
+
+			this.#count++;
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(result.value) : result.value
+			};
+		}
+
+		async #asyncNext(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
+			const currentResult = await result;
+			if (currentResult.done) {
+				return currentResult;
+			}
+
+			if (this.#count >= this.#limit) {
+				return { done: true, value: undefined };
+			}
+
+			this.#count++;
+			return {
+				done: false,
+				value: this.transformer ? this.transformer(currentResult.value) : currentResult.value
+			};
+		}
+	};
 }
 
 export default ExtendedIterable;
