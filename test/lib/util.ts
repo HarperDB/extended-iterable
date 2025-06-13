@@ -1,5 +1,3 @@
-import { setTimeout as delay } from 'node:timers/promises';
-
 /**
  * Creates a generator function that produces the numbers 1, 2, 3.
  *
@@ -17,11 +15,8 @@ export function* simpleGenerator() {
  * @returns The async generator function.
  */
 export async function* simpleAsyncGenerator() {
-	await delay(5);
 	yield 1;
-	await delay(5);
 	yield 2;
-	await delay(5);
 	yield 3;
 }
 
@@ -32,7 +27,6 @@ export async function* simpleAsyncGenerator() {
  */
 // eslint-disable-next-line require-yield
 export async function* emptyAsyncGenerator() {
-	await delay(5);
 }
 
 /**

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { setTimeout as delay } from 'node:timers/promises';
 import {
 	createEmptyIterableObject,
 	createIterableObject,
@@ -96,10 +95,7 @@ describe('.mapError()', () => {
 					}
 					return item * 2;
 				})
-				.mapError(async error => {
-					await delay(10);
-					return error;
-				})
+				.mapError(async error => error)
 				.asArray
 			).toEqual([2, new Error('error'), 6]);
 		});

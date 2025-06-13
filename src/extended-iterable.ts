@@ -585,86 +585,95 @@ export class ExtendedIterable<T> {
 			throw new TypeError('Callback is not a function');
 		}
 
-		const iterator = this.#iterator;
-		const transformer = this.#transformer;
+		return new ExtendedIterable(
+			new ExtendedIterable.FilterIterator(this.#iterator, callback, this.#transformer)
+		);
+	}
 
-		class FilterIterator extends BaseIterator<T> {
-			#index = 0;
+	static FilterIterator = class FilterIterator<T> extends BaseIterator<T> {
+		#index = 0;
+		#callback: (value: T, index: number) => boolean | Promise<boolean>;
 
-			next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-				let result = super.next();
+		constructor(
+			iterator: Iterator<T> | AsyncIterator<T>,
+			callback: (value: T, index: number) => boolean | Promise<boolean>,
+			transformer?: ValueTransformer<any, T>
+		) {
+			super(iterator, transformer);
+			this.#callback = callback;
+		}
 
-				// async handling
+		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+			let result = super.next();
+
+			// async handling
+			if (result instanceof Promise) {
+				return this.#asyncFilter(result);
+			}
+
+			// sync handling
+			while (!result.done) {
+				const rval = this.#processResult(result);
+				if (rval) {
+					return rval;
+				}
+
+				result = super.next();
+
+				// handle sync-to-async transition
 				if (result instanceof Promise) {
 					return this.#asyncFilter(result);
 				}
-
-				// sync handling
-				while (!result.done) {
-					const rval = this.#processResult(result);
-					if (rval) {
-						return rval;
-					}
-
-					result = super.next();
-
-					// handle sync-to-async transition
-					if (result instanceof Promise) {
-						return this.#asyncFilter(result);
-					}
-				}
-
-				return result;
 			}
 
-			async #asyncFilter(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-				let currentResult = await result;
-
-				while (!currentResult.done) {
-					const rval = this.#processResult(currentResult);
-					if (rval) {
-						return rval;
-					}
-					currentResult = await this.next();
-				}
-
-				return currentResult;
-			}
-
-			#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
-				const value = transformer ? transformer(result.value) : result.value;
-				let keep: boolean | Promise<boolean>;
-				try {
-					keep = callback(value, this.#index++);
-				} catch (err) {
-					return this.throw(err);
-				}
-
-				if (keep instanceof Promise) {
-					return keep
-						.then(keep => {
-							if (keep) {
-								return {
-									done: false,
-									value
-								};
-							}
-							return this.next();
-						})
-						.catch(err => this.throw(err));
-				}
-
-				if (keep) {
-					return {
-						done: false,
-						value
-					};
-				}
-			}
+			return result;
 		}
 
-		return new ExtendedIterable(new FilterIterator(iterator));
-	}
+		async #asyncFilter(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
+			let currentResult = await result;
+
+			while (!currentResult.done) {
+				const rval = this.#processResult(currentResult);
+				if (rval) {
+					return rval;
+				}
+				currentResult = await this.next();
+			}
+
+			return currentResult;
+		}
+
+		#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
+			const value = this.transformer ? this.transformer(result.value) : result.value;
+			let keep: boolean | Promise<boolean>;
+			try {
+				keep = this.#callback(value, this.#index++);
+			} catch (err) {
+				return this.throw(err);
+			}
+
+			if (keep instanceof Promise) {
+				return keep
+					.then(keep => {
+						if (keep) {
+							return {
+								done: false,
+								value
+							};
+						}
+						return this.next();
+					})
+					.catch(err => this.throw(err));
+			}
+
+			if (keep) {
+				return {
+					done: false,
+					value
+				};
+			}
+		}
+	};
 
 	/**
 	 * Returns the first item of the iterable for which the callback returns

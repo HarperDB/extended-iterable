@@ -1,6 +1,5 @@
-import { assert, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { setTimeout as delay } from 'node:timers/promises';
 import {
 	createAsyncIterableObject,
 	createEmptyIterableObject,
@@ -69,25 +68,18 @@ describe('.every()', () => {
 
 		it('should return true if all items satisfy the async callback', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.every(async item => {
-				await delay(10);
-				return item > 0;
-			})).toEqual(true);
+			expect(await iter.every(async item => item > 0)).toEqual(true);
 		});
 
 		it('should return false if any item does not satisfy the async callback', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.every(async item => {
-				await delay(10);
-				return item < 2;
-			})).toEqual(false);
+			expect(await iter.every(async item => item < 2)).toEqual(false);
 		});
 
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.every(async _item => {
-					await delay(10);
+				await iter.every(async () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
@@ -213,18 +205,12 @@ describe('.every()', () => {
 
 		it('should return true if all items satisfy the async callback with mixed async and sync values', async () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-			expect(await iterator.every(async item => {
-				await delay(10);
-				return item < 8;
-			})).toBe(true);
+			expect(await iterator.every(async item => item < 8)).toBe(true);
 		});
 
 		it('should return false if any item does not satisfy the callback with mixed async and sync values', async () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-			expect(await iterator.every(async item => {
-				await delay(10);
-				return item > 3;
-			})).toBe(false);
+			expect(await iterator.every(async item => item > 3)).toBe(false);
 		});
 
 		it('should call return() on source iterable', () => {
@@ -244,10 +230,7 @@ describe('.every()', () => {
 		it('should call return() on source async iterable', async () => {
 			const obj = createAsyncIterableObject();
 			const iter = new ExtendedIterable(obj);
-			expect(await iter.every(async item => {
-				await delay(10);
-				return item < 5;
-			})).toBe(true);
+			expect(await iter.every(async item => item < 5)).toBe(true);
 			expect(obj.returned).toBe(true);
 		});
 
@@ -367,25 +350,18 @@ describe('.every()', () => {
 
 		it('should return true if all items satisfy the async callback', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.every(async item => {
-				await delay(10);
-				return item > 0;
-			})).toEqual(true);
+			expect(await iter.every(async item => item > 0)).toEqual(true);
 		});
 
 		it('should return false if any item does not satisfy the async callback', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.every(async item => {
-				await delay(10);
-				return item < 2;
-			})).toEqual(false);
+			expect(await iter.every(async item => item < 2)).toEqual(false);
 		});
 
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.every(async _item => {
-					await delay(10);
+					await iter.every(async () => {
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));

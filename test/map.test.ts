@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { setTimeout as delay } from 'node:timers/promises';
 import {
 	createEmptyIterableObject,
 	createIterableObject,
@@ -56,10 +55,7 @@ describe('.map()', () => {
 
 		it('should handle async callback function', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.map(async item => {
-				await delay(10);
-				return item * 2;
-			}).asArray).toEqual([2, 4, 6]);
+			expect(await iter.map(async item => item * 2).asArray).toEqual([2, 4, 6]);
 		});
 
 		it('should propagate error in async callback function', async () => {
@@ -200,10 +196,7 @@ describe('.map()', () => {
 
 		it('should handle async callback function', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.map(async item => {
-				await delay(10);
-				return item * 2;
-			}).asArray).toEqual([2, 4, 6]);
+			expect(await iter.map(async item => item * 2).asArray).toEqual([2, 4, 6]);
 		});
 
 		it('should propagate error in async callback function', async () => {

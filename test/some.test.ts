@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { setTimeout as delay } from 'node:timers/promises';
 import {
 	createEmptyIterableObject,
 	createIterableObject,
@@ -64,25 +63,18 @@ describe('.some()', () => {
 
 		it('should return true if some items satisfy the async callback', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.some(async () => {
-				await delay(10);
-				return true;
-			})).toEqual(true);
+			expect(await iter.some(async () => true)).toEqual(true);
 		});
 
 		it('should return false if any item does not satisfy the async callback', async () => {
 			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.some(async item => {
-				await delay(10);
-				return item > 3;
-			})).toEqual(false);
+			expect(await iter.some(async item => item > 3)).toEqual(false);
 		});
 
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable([1, 2, 3]);
 				await iter.some(async () => {
-					await delay(10);
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
@@ -174,25 +166,18 @@ describe('.some()', () => {
 
 		it('should return true if some items satisfy the async callback', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(async item => {
-				await delay(10);
-				return item > 1;
-			})).toEqual(true);
+			expect(await iter.some(async item => item > 1)).toEqual(true);
 		});
 
 		it('should return false if any item does not satisfy the async callback', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(async item => {
-				await delay(10);
-				return item > 3;
-			})).toEqual(false);
+			expect(await iter.some(async item => item > 3)).toEqual(false);
 		});
 
 		it('should propagate error in async callback function', async () => {
 			await expect(async () => {
 				const iter = new ExtendedIterable(simpleAsyncGenerator);
 				await iter.some(async () => {
-					await delay(10);
 					throw new Error('error');
 				});
 			}).rejects.toThrowError(new Error('error'));
