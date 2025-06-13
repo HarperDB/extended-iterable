@@ -2,9 +2,11 @@ import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import { setTimeout as delay } from 'node:timers/promises';
 import {
+	createAsyncIterableObject,
 	createEmptyIterableObject,
 	createIterableObject,
 	createMixedAsyncIterableObject,
+	createPartialAsyncIterableObject,
 	simpleAsyncGenerator,
 	simpleGenerator
 } from './lib/util.js';
@@ -100,12 +102,7 @@ describe('.every()', () => {
 				return { done: true, value: undefined };
 			};
 			const every = new ExtendedIterable(arrIter).every(item => item < 5);
-			const iterator = every[Symbol.iterator]();
-			expect(iterator.next()).toEqual({ done: false, value: 2 });
-			expect(iterator.next()).toEqual({ done: false, value: 4 });
-			assert(iterator.return);
-			const rval = iterator.return();
-			expect(rval).toEqual({ done: true, value: undefined });
+			expect(every).toBe(true);
 			expect(returned).toBe(true);
 		});
 
@@ -118,13 +115,46 @@ describe('.every()', () => {
 				return { done: true, value: undefined };
 			};
 			const every = new ExtendedIterable(arrIter).every(item => item < 5);
-			const iterator = every[Symbol.asyncIterator]();
-			expect(await iterator.next()).toEqual({ done: false, value: 2 });
-			expect(await iterator.next()).toEqual({ done: false, value: 4 });
-			assert(iterator.return);
-			const rval = await iterator.return();
-			expect(rval).toEqual({ done: true, value: undefined });
+			expect(every).toBe(true);
 			expect(returned).toBe(true);
+		});
+
+		it('should call throw() on source iterable', () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let thrown = false;
+			arrIter.throw = () => {
+				thrown = true;
+				throw new Error('error');
+			};
+			const iter = new ExtendedIterable(arrIter);
+			expect(() => iter.every(item => {
+				if (item === 2) {
+					throw new Error('error');
+				}
+				return item < 5;
+			})).toThrowError(new Error('error'));
+			expect(thrown).toBe(true);
+		});
+
+		it('should call throw() on source async iterable', async () => {
+			const arr = [1, 2, 3];
+			const arrIter = arr[Symbol.iterator]();
+			let thrown = false;
+			arrIter.throw = () => {
+				thrown = true;
+				throw new Error('error');
+			};
+			const iter = new ExtendedIterable(arrIter);
+			await expect(async () => {
+				await iter.every(async item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item < 5;
+				});
+			}).rejects.toThrowError(new Error('error'));
+			expect(thrown).toBe(true);
 		});
 	});
 
@@ -195,6 +225,76 @@ describe('.every()', () => {
 				await delay(10);
 				return item > 3;
 			})).toBe(false);
+		});
+
+		it('should call return() on source iterable', () => {
+			const obj = createIterableObject();
+			const iter = new ExtendedIterable(obj);
+			expect(iter.every(item => item < 5)).toBe(true);
+			expect(obj.returned).toBe(true);
+		});
+
+		it('should return false and call return() on source iterable with async callback', async () => {
+			const obj = createIterableObject();
+			const iter = new ExtendedIterable(obj);
+			expect(await iter.every(async () => false)).toBe(false);
+			expect(obj.returned).toBe(true);
+		});
+
+		it('should call return() on source async iterable', async () => {
+			const obj = createAsyncIterableObject();
+			const iter = new ExtendedIterable(obj);
+			expect(await iter.every(async item => {
+				await delay(10);
+				return item < 5;
+			})).toBe(true);
+			expect(obj.returned).toBe(true);
+		});
+
+		it('should call throw() on source iterable', () => {
+			const obj = createIterableObject();
+			const iter = new ExtendedIterable(obj);
+			expect(() => iter.every(item => {
+				if (item === 2) {
+					throw new Error('error');
+				}
+				return item < 5;
+			})).toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
+		});
+
+		it('should call throw() on source async iterable', async () => {
+			const obj = createAsyncIterableObject();
+			const iter = new ExtendedIterable(obj);
+			await expect(async () => {
+				await iter.every(async item => {
+					if (item === 2) {
+						throw new Error('error');
+					}
+					return item < 5;
+				});
+			}).rejects.toThrowError(new Error('error'));
+			expect(obj.thrown).toBe(true);
+		});
+
+		it('should call throw() on source async iterable with callback', async () => {
+			const obj = createPartialAsyncIterableObject();
+			const iter = new ExtendedIterable(obj);
+			await expect(async () => {
+				await iter.every(() => {
+					throw new Error('error');
+				});
+			}).rejects.toThrowError(new Error('error'));
+		});
+
+		it('should call throw() on source async iterable with async callback', async () => {
+			const obj = createPartialAsyncIterableObject();
+			const iter = new ExtendedIterable(obj);
+			await expect(async () => {
+				await iter.every(async () => {
+					throw new Error('error');
+				});
+			}).rejects.toThrowError(new Error('error'));
 		});
 	});
 

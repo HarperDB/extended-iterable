@@ -74,7 +74,37 @@ export function createIterableObject(): Iterator<number> & {
 }
 
 /**
- * Creates an iterable object that produces the numbers 0, 1, 2, 3.
+ * Creates an async iterable object that produces the numbers 0, 1, 2, 3.
+ *
+ * @returns The iterable object.
+ */
+export function createPartialAsyncIterableObject(): AsyncIterator<number> & {
+	index: number;
+	returned: boolean;
+	thrown: boolean;
+} {
+	return {
+		index: 0,
+		returned: false,
+		thrown: false,
+		async next() {
+			if (this.index > 3) {
+				return {
+					done: true,
+					value: undefined
+				};
+			}
+
+			return {
+				done: false,
+				value: this.index++
+			};
+		}
+	};
+}
+
+/**
+ * Creates an async iterable object that produces the numbers 0, 1, 2, 3.
  *
  * @returns The iterable object.
  */

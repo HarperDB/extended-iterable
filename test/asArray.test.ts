@@ -63,6 +63,23 @@ describe('.asArray', () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
 			expect(await iterator.asArray).toEqual([0, 1, 2, 3, 4, 5]);
 		});
+
+		it('should call return() on an iterable object', () => {
+			const obj = createIterableObject();
+			const iter = new ExtendedIterable(obj);
+			expect(iter.asArray).toEqual([0, 1, 2, 3]);
+			expect(obj.returned).toBe(true);
+		});
+
+		it('should call throw() on an iterable object', () => {
+			const obj = createIterableObject();
+			obj.next = () => {
+				throw new Error('test');
+			};
+			const iter = new ExtendedIterable(obj);
+			expect(() => iter.asArray).toThrowError(new Error('test'));
+			expect(obj.thrown).toBe(true);
+		});
 	});
 
 	describe('generator function', () => {
