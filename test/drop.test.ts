@@ -44,9 +44,9 @@ describe('.drop()', () => {
 		it('should call return() on source iterable', () => {
 			const arr = [1, 2, 3, 4];
 			const arrIter = arr[Symbol.iterator]();
-			let returned = false;
+			let returned = 0;
 			arrIter.return = () => {
-				returned = true;
+				returned++;
 				return { done: true, value: undefined };
 			};
 			const dropped = new ExtendedIterable(arrIter, value => value * 2).drop(2);
@@ -56,15 +56,15 @@ describe('.drop()', () => {
 			assert(iterator.return);
 			const rval = iterator.return();
 			expect(rval).toEqual({ done: true, value: undefined });
-			expect(returned).toBe(true);
+			expect(returned).toBe(1);
 		});
 
 		it('should call return() on source async iterable', async () => {
 			const arr = [1, 2, 3, 4];
 			const arrIter = arr[Symbol.iterator]();
-			let returned = false;
+			let returned = 0;
 			arrIter.return = () => {
-				returned = true;
+				returned++;
 				return { done: true, value: undefined };
 			};
 			const dropped = new ExtendedIterable(arrIter, value => value * 2).drop(2);
@@ -74,7 +74,7 @@ describe('.drop()', () => {
 			assert(iterator.return);
 			const rval = await iterator.return();
 			expect(rval).toEqual({ done: true, value: undefined });
-			expect(returned).toBe(true);
+			expect(returned).toBe(1);
 		});
 	});
 
@@ -142,7 +142,7 @@ describe('.drop()', () => {
 				assert(iterator.throw);
 				iterator.throw(new Error('error'));
 			}).toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source async iterable', async () => {
@@ -155,7 +155,7 @@ describe('.drop()', () => {
 				assert(iterator.throw);
 				await iterator.throw(new Error('error'));
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 	});
 

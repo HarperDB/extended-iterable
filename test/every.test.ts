@@ -217,21 +217,21 @@ describe('.every()', () => {
 			const obj = createIterableObject();
 			const iter = new ExtendedIterable(obj);
 			expect(iter.every(item => item < 5)).toBe(true);
-			expect(obj.returned).toBe(true);
+			expect(obj.returned).toBe(1);
 		});
 
 		it('should return false and call return() on source iterable with async callback', async () => {
 			const obj = createIterableObject();
 			const iter = new ExtendedIterable(obj);
 			expect(await iter.every(async () => false)).toBe(false);
-			expect(obj.returned).toBe(true);
+			expect(obj.returned).toBe(1);
 		});
 
 		it('should call return() on source async iterable', async () => {
 			const obj = createAsyncIterableObject();
 			const iter = new ExtendedIterable(obj);
 			expect(await iter.every(async item => item < 5)).toBe(true);
-			expect(obj.returned).toBe(true);
+			expect(obj.returned).toBe(1);
 		});
 
 		it('should call throw() on source iterable', () => {
@@ -243,7 +243,7 @@ describe('.every()', () => {
 				}
 				return item < 5;
 			})).toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source async iterable', async () => {
@@ -257,7 +257,7 @@ describe('.every()', () => {
 					return item < 5;
 				});
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source async iterable with callback', async () => {

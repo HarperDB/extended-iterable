@@ -29,7 +29,8 @@ describe('Chaining', () => {
 	});
 
 	it('should async chain methods', async () => {
-		const iter = new ExtendedIterable(createMixedAsyncIterableObject());
+		const obj = createMixedAsyncIterableObject();
+		const iter = new ExtendedIterable(obj);
 		expect(await iter
 			// 0, 1, 2, 3, 4, 5
 			.map(async item => item * 2)
@@ -40,5 +41,7 @@ describe('Chaining', () => {
 			// 4, 6
 			.asArray
 		).toEqual([4, 6]);
+		expect(obj.returned).toBe(1);
+		expect(obj.thrown).toBe(0);
 	});
 });

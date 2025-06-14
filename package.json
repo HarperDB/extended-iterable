@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "check": "pnpm type-check && pnpm lint",
-    "coverage": "vitest run --coverage",
+    "coverage": "node scripts/coverage/main.js",
     "lint": "oxlint",
     "prepublishOnly": "npm run build",
     "test": "vitest",

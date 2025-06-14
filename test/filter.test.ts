@@ -175,7 +175,7 @@ describe('.filter()', () => {
 			assert(iterator.return);
 			const rval = iterator.return();
 			expect(rval).toEqual({ done: true, value: undefined });
-			expect(obj.returned).toBe(true);
+			expect(obj.returned).toBe(1);
 		});
 
 		it('should call throw() on source iterable if the callback throws an error', () => {
@@ -186,7 +186,7 @@ describe('.filter()', () => {
 					throw new Error('error');
 				}).asArray;
 			}).toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source iterable if the async callback throws an error', async () => {
@@ -197,7 +197,7 @@ describe('.filter()', () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source iterable if the callback throws an error', async () => {
@@ -208,7 +208,7 @@ describe('.filter()', () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source iterable if the async callback throws an error', async () => {
@@ -219,7 +219,7 @@ describe('.filter()', () => {
 					throw new Error('error');
 				}).asArray;
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 	});
 
@@ -300,7 +300,7 @@ describe('.filter()', () => {
 					}
 					return value * 2;
 				});
-				await iter.filter(_item => true).asArray;
+				await iter.filter(() => true).asArray;
 			}).rejects.toThrowError(new Error('error'));
 		});
 

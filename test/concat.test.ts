@@ -140,7 +140,7 @@ describe('.concat()', () => {
 				assert(iterator.throw);
 				iterator.throw(new Error('error'));
 			}).toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 
 		it('should call throw() on source async iterable', async () => {
@@ -154,7 +154,7 @@ describe('.concat()', () => {
 				assert(iterator.throw);
 				await iterator.throw(new Error('error'));
 			}).rejects.toThrowError(new Error('error'));
-			expect(obj.thrown).toBe(true);
+			expect(obj.thrown).toBe(1);
 		});
 	});
 
