@@ -69,6 +69,13 @@ describe('.asArray', () => {
 						const iterator = new ExtendedIterable(data);
 						expect(() => iterator.asArray).toThrowError(new Error('test'));
 					});
+
+					it('should error if the iterator next() throws an error at a specific index', () => {
+						assert(testData.syncNextThrows);
+						const data = testData.syncNextThrows(2);
+						const iterator = new ExtendedIterable(data);
+						expect(() => iterator.asArray).toThrowError(new Error('test'));
+					});
 				}
 			});
 		}

@@ -105,48 +105,55 @@ export class ExtendedIterable<T> {
 		const iterator = this.#iterator;
 		const transformer = this.#transformer;
 		const array: T[] = [];
+
+		const handleError = (err: unknown) => {
+			iterator.throw?.(err);
+			throw err;
+		};
+
 		let result: IteratorResult<T> | Promise<IteratorResult<T>>;
 
-		do {
-			try {
-				result = iterator.next();
-			} catch (err) {
-				iterator.throw?.(err);
-				throw err;
-			}
+		try {
+			result = iterator.next();
+		} catch (err) {
+			return handleError(err);
+		}
 
-			// if result is a Promise, we know it's async
-			if (result instanceof Promise) {
-				return this.#asyncAsArray(array, result);
-			}
+		// If first result is async, switch to async mode immediately
+		if (result instanceof Promise) {
+			return this.#asyncAsArray(array, result);
+		}
 
-			// if iteration is complete, break out
-			if (result.done) {
-				break;
-			}
-
-			// process the current result
+		// Synchronous processing
+		while (!result.done) {
 			let transformedResult: T | Promise<T>;
 			try {
 				transformedResult = transformer ? transformer(result.value) : result.value;
 			} catch (err) {
-				iterator.throw?.(err);
-				throw err;
+				return handleError(err);
 			}
 
+			// If transformer returns Promise, switch to async mode
 			if (transformedResult instanceof Promise) {
-				// switch to async mode when transformer returns Promise
 				return transformedResult.then(value => {
 					array.push(value);
 					return this.#asyncAsArray(array, iterator.next());
-				}).catch(err => {
-					iterator.throw?.(err);
-					throw err;
-				});
+				}).catch(handleError);
 			}
 
 			array.push(transformedResult);
-		} while (true);
+
+			try {
+				result = iterator.next();
+			} catch (err) {
+				return handleError(err);
+			}
+
+			// If iterator becomes async mid-iteration, switch to async mode
+			if (result instanceof Promise) {
+				return this.#asyncAsArray(array, result);
+			}
+		}
 
 		iterator.return?.(array);
 		return array;
@@ -162,56 +169,28 @@ export class ExtendedIterable<T> {
 	async #asyncAsArray(array: T[], currentResult: IteratorResult<T> | Promise<IteratorResult<T>>): Promise<Array<T>> {
 		const iterator = this.#iterator;
 		const transformer = this.#transformer;
-		let result: IteratorResult<T>;
 
 		try {
-			result = await currentResult;
+			let result = await currentResult;
 
 			while (!result.done) {
-				let transformedResult: T | Promise<T>;
-				try {
-					transformedResult = transformer ? transformer(result.value) : result.value;
-				} catch (err) {
-					if (iterator.throw) {
-						const throwResult = iterator.throw(err);
-						if (throwResult instanceof Promise) {
-							return throwResult.then(() => { throw err; });
-						}
-					}
-					throw err;
-				}
-
-				if (transformedResult instanceof Promise) {
-					const value = await transformedResult;
-					array.push(value);
-				} else {
-					array.push(transformedResult);
-				}
-
-				try {
-					result = await iterator.next();
-				} catch (err) {
-					if (iterator.throw) {
-						const throwResult = iterator.throw(err);
-						if (throwResult instanceof Promise) {
-							return throwResult.then(() => { throw err; });
-						}
-					}
-					throw err;
-				}
+				const transformedResult = transformer ? transformer(result.value) : result.value;
+				const value = transformedResult instanceof Promise ? await transformedResult : transformedResult;
+				array.push(value);
+				result = await iterator.next();
 			}
+
+			iterator.return?.(array);
+			return array;
 		} catch (err) {
 			if (iterator.throw) {
-				const throwResult = iterator.throw(err);
-				if (throwResult instanceof Promise) {
-					return throwResult.then(() => { throw err; });
-				}
-			}
-			throw err;
+                const throwResult = iterator.throw(err);
+                if (throwResult instanceof Promise) {
+                    return throwResult.then(() => { throw err; });
+                }
+            }
+            throw err;
 		}
-
-		iterator.return?.(array);
-		return array;
 	}
 
 	/**
