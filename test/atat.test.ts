@@ -86,6 +86,7 @@ describe('.at()', () => {
 						const data = testData.syncNextThrows();
 						const iterator = new ExtendedIterable(data);
 						expect(() => iterator.at(2)).toThrowError(new Error('test'));
+						assertReturnedThrown(data, 0, 1);
 					});
 
 					it('should error if the iterator next() throws an error at a specific index', () => {
@@ -93,6 +94,7 @@ describe('.at()', () => {
 						const data = testData.syncNextThrows(2);
 						const iterator = new ExtendedIterable(data);
 						expect(() => iterator.at(2)).toThrowError(new Error('test'));
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 			});

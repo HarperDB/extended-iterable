@@ -1,4 +1,4 @@
-export type ValueTransformer<TInput, TOutput> = (value: TInput) => TOutput;
+export type ValueTransformer<TInput, TOutput> = (value: TInput) => TOutput | Promise<TOutput>;
 
 export type IterableLike<T> =
 	| Iterator<T>
@@ -20,7 +20,17 @@ class BaseIterator<T> implements Iterator<T>, AsyncIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-		return this.iterator.next();
+		try {
+			return this.iterator.next();
+		} catch (err) {
+			if (this.iterator.throw) {
+				const throwResult = this.iterator.throw(err);
+				if (throwResult instanceof Promise) {
+					return throwResult.then(() => { throw err; });
+				}
+			}
+			throw err;
+		}
 	}
 
 	return(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
@@ -119,12 +129,12 @@ export class ExtendedIterable<T> {
 			return handleError(err);
 		}
 
-		// If first result is async, switch to async mode immediately
+		// if first result is async, switch to async mode immediately
 		if (result instanceof Promise) {
 			return this.#asyncAsArray(array, result);
 		}
 
-		// Synchronous processing
+		// synchronous processing
 		while (!result.done) {
 			let transformedResult: T | Promise<T>;
 			try {
@@ -133,7 +143,7 @@ export class ExtendedIterable<T> {
 				return handleError(err);
 			}
 
-			// If transformer returns Promise, switch to async mode
+			// if transformer returns Promise, switch to async mode
 			if (transformedResult instanceof Promise) {
 				return transformedResult.then(value => {
 					array.push(value);
@@ -149,7 +159,7 @@ export class ExtendedIterable<T> {
 				return handleError(err);
 			}
 
-			// If iterator becomes async mid-iteration, switch to async mode
+			// if iterator becomes async mid-iteration, switch to async mode
 			if (result instanceof Promise) {
 				return this.#asyncAsArray(array, result);
 			}
@@ -232,12 +242,12 @@ export class ExtendedIterable<T> {
 			return handleError(err);
 		}
 
-		// If first result is async, handle everything async
+		// if first result is async, handle everything async
 		if (result instanceof Promise) {
 			return this.#asyncAt(result, index, currentIndex).catch(handleError);
 		}
 
-		// Synchronous path
+		// synchronous path
 		while (!result.done) {
 			if (currentIndex === index) {
 				let transformedValue: T | Promise<T>;
@@ -269,7 +279,7 @@ export class ExtendedIterable<T> {
 				return handleError(err);
 			}
 
-			// Switch to async if needed
+			// switch to async if needed
 			if (result instanceof Promise) {
 				return this.#asyncAt(result, index, currentIndex).catch(handleError);
 			}
@@ -313,11 +323,7 @@ export class ExtendedIterable<T> {
 	 */
 	concat(other: IterableLike<T>): ExtendedIterable<T> {
 		return new ExtendedIterable(
-			new ExtendedIterable.#ConcatIterator(
-				this.#iterator,
-				resolveIterator(other),
-				this.#transformer
-			)
+			new ExtendedIterable.#ConcatIterator(other, this.#iterator, this.#transformer)
 		);
 	}
 
@@ -326,12 +332,17 @@ export class ExtendedIterable<T> {
 		#secondIterator: Iterator<T> | AsyncIterator<T>;
 
 		constructor(
+			secondIterator: IterableLike<T>,
 			iterator: Iterator<T> | AsyncIterator<T>,
-			secondIterator: Iterator<T> | AsyncIterator<T>,
 			transformer?: ValueTransformer<any, T>
 		) {
 			super(iterator, transformer);
-			this.#secondIterator = secondIterator;
+			try {
+				this.#secondIterator = resolveIterator(secondIterator);
+			} catch (err) {
+				this.iterator.throw?.(err);
+				throw err;
+			}
 		}
 
 		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
@@ -364,13 +375,30 @@ export class ExtendedIterable<T> {
 			return this.#processResult(result);
 		}
 
-		#processResult(result: IteratorResult<T>, transformer?: ValueTransformer<T, T>): IteratorResult<T> {
+		#processResult(result: IteratorResult<T>, transformer?: ValueTransformer<T, T>): IteratorResult<T> | Promise<IteratorResult<T>> {
 			if (result.done) {
 				return result;
 			}
+
+			if (!transformer) {
+				return {
+					done: false,
+					value: result.value
+				};
+			}
+
+			const transformedValue = transformer(result.value);
+
+			if (transformedValue instanceof Promise) {
+				return transformedValue.then(value => ({
+					done: false,
+					value
+				}));
+			}
+
 			return {
 				done: false,
-				value: transformer ? transformer(result.value) : result.value
+				value: transformedValue
 			};
 		}
 	};
@@ -388,18 +416,20 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	drop(count: number): ExtendedIterable<T> {
-		if (typeof count !== 'number') {
-			throw new TypeError('Count is not a number');
-		}
-		if (count < 0) {
-			throw new RangeError('Count must be a positive number');
-		}
-		if (count === 0) {
-			return this;
+		try {
+			if (typeof count !== 'number') {
+				throw new TypeError('Count is not a number');
+			}
+			if (count < 0) {
+				throw new RangeError('Count must be a positive number');
+			}
+		} catch (err) {
+			this.#iterator.throw?.(err);
+			throw err;
 		}
 
 		return new ExtendedIterable(
-			new ExtendedIterable.#DropIterator(this.#iterator, count, this.#transformer)
+			new ExtendedIterable.#DropIterator(count, this.#iterator, this.#transformer)
 		);
 	}
 
@@ -408,7 +438,7 @@ export class ExtendedIterable<T> {
 		#doneSkipping = false;
 		#count: number;
 
-		constructor(iterator: Iterator<T> | AsyncIterator<T>, count: number, transformer?: ValueTransformer<any, T>) {
+		constructor(count: number, iterator: Iterator<T> | AsyncIterator<T>, transformer?: ValueTransformer<any, T>) {
 			super(iterator, transformer);
 			this.#count = count;
 		}
@@ -425,7 +455,16 @@ export class ExtendedIterable<T> {
 			let result = super.next();
 
 			if (result instanceof Promise) {
-				return this.#asyncSkip(result);
+				return this.#asyncSkip(result)
+					.catch(err => {
+						if (this.iterator.throw) {
+							const throwResult = this.iterator.throw(err);
+							if (throwResult instanceof Promise) {
+								return throwResult.then(() => { throw err; });
+							}
+						}
+						throw err;
+					});
 			}
 
 			while (!result.done && this.#itemsDropped < this.#count) {
@@ -439,7 +478,23 @@ export class ExtendedIterable<T> {
 			}
 
 			this.#doneSkipping = true;
-			return this.#transformResult(result);
+			try {
+				const transformedResult = this.#transformResult(result);
+				if (transformedResult instanceof Promise) {
+					return transformedResult.catch(err => {
+						if (this.iterator.throw) {
+							return this.iterator.throw(err);
+						}
+						throw err;
+					});
+				}
+				return transformedResult;
+			} catch (err) {
+				if (this.iterator.throw) {
+					return this.iterator.throw(err);
+				}
+				throw err;
+			}
 		}
 
 		async #asyncSkip(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
@@ -455,13 +510,24 @@ export class ExtendedIterable<T> {
 			return this.#transformResult(currentResult);
 		}
 
-		#transformResult(result: IteratorResult<T>): IteratorResult<T> {
+		#transformResult(result: IteratorResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> {
 			if (result.done) {
+				if (this.iterator.return) {
+					return this.iterator.return(result.value);
+				}
 				return result;
+			}
+			const transformedValue = this.transformer ? this.transformer(result.value) : result.value;
+			if (transformedValue instanceof Promise) {
+				return transformedValue
+					.then(value => ({
+						done: false,
+						value
+					}));
 			}
 			return {
 				done: false,
-				value: this.transformer ? this.transformer(result.value) : result.value
+				value: transformedValue
 			};
 		}
 	};
@@ -664,13 +730,50 @@ export class ExtendedIterable<T> {
 		}
 
 		#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
-			let value: T;
+			let transformedValue: T | Promise<T>;
 			try {
-				value = this.transformer ? this.transformer(result.value) : result.value;
+				transformedValue = this.transformer ? this.transformer(result.value) : result.value;
 			} catch (err) {
 				return this.throw(err);
 			}
 
+			// Handle async transformer
+			if (transformedValue instanceof Promise) {
+				return transformedValue.then(value => {
+					let keep: boolean | Promise<boolean>;
+					try {
+						keep = this.#callback(value, this.#index++);
+					} catch (err) {
+						return this.throw(err);
+					}
+
+					if (keep instanceof Promise) {
+						return keep
+							.then(keep => {
+								if (keep) {
+									return {
+										done: false,
+										value
+									};
+								}
+								return this.next();
+							})
+							.catch(err => this.throw(err));
+					}
+
+					if (keep) {
+						return {
+							done: false,
+							value
+						};
+					}
+
+					return this.next();
+				}).catch(err => this.throw(err));
+			}
+
+			// Sync path
+			const value = transformedValue;
 			let keep: boolean | Promise<boolean>;
 			try {
 				keep = this.#callback(value, this.#index++);
@@ -735,9 +838,7 @@ export class ExtendedIterable<T> {
 			const value = transformer ? transformer(result.value) : result.value;
 			if (callback(value, index++)) {
 				// Early termination - call return() before exiting
-				if (iterator.return) {
-					iterator.return();
-				}
+				iterator.return?.();
 				return value;
 			}
 			result = iterator.next() as IteratorResult<T>;
@@ -748,7 +849,8 @@ export class ExtendedIterable<T> {
 			}
 		}
 
-		// Iterator exhausted naturally - no need to call return()
+		// Iterator exhausted naturally - call return() before completing
+		iterator.return?.();
 		return undefined;
 	}
 
@@ -764,9 +866,7 @@ export class ExtendedIterable<T> {
 				return isMatch.then(isMatch => {
 					if (isMatch) {
 						// Early termination - call return() before exiting
-						if (iterator.return) {
-							iterator.return();
-						}
+						iterator.return?.();
 						return value;
 					}
 					return this.#asyncFind(iterator.next(), callback, index);
@@ -774,15 +874,14 @@ export class ExtendedIterable<T> {
 			}
 			if (isMatch) {
 				// Early termination - call return() before exiting
-				if (iterator.return) {
-					iterator.return();
-				}
+				iterator.return?.();
 				return value;
 			}
 			currentResult = await iterator.next();
 		}
 
-		// Iterator exhausted naturally - no need to call return()
+		// Iterator exhausted naturally - call return() before completing
+		iterator.return?.();
 		return undefined;
 	}
 
@@ -1003,21 +1102,16 @@ export class ExtendedIterable<T> {
 			}
 
 			try {
-				const mappedValue = this.#callback(this.transformer ? this.transformer(result.value) : result.value, this.#index++);
-
-				if (mappedValue instanceof Promise) {
-					return mappedValue.then(value => ({
+				const value = this.#callback(this.transformer ? this.transformer(result.value) : result.value, this.#index++);
+				if (value instanceof Promise) {
+					return value.then(value => ({
 						done: false,
 						value
-					})).catch(err => {
-						this.iterator.throw?.(err);
-						throw err;
-					});
+					}));
 				}
-
 				return {
 					done: false,
-					value: mappedValue
+					value
 				};
 			} catch (err) {
 				this.iterator.throw?.(err);
@@ -1032,34 +1126,19 @@ export class ExtendedIterable<T> {
 			}
 
 			try {
-				const mappedValue = this.#callback(this.transformer ? this.transformer(currentResult.value) : currentResult.value, this.#index++);
-
-				if (mappedValue instanceof Promise) {
-					return mappedValue.then(value => ({
+				const value = this.#callback(this.transformer ? this.transformer(currentResult.value) : currentResult.value, this.#index++);
+				if (value instanceof Promise) {
+					return value.then(value => ({
 						done: false,
 						value
-					})).catch(async err => {
-						if (this.iterator.throw) {
-							const throwResult = this.iterator.throw(err);
-							if (throwResult instanceof Promise) {
-								await throwResult.then(() => { throw err; });
-							}
-						}
-						throw err;
-					});
+					}));
 				}
-
 				return {
 					done: false,
-					value: mappedValue
+					value
 				};
 			} catch (err) {
-				if (this.iterator.throw) {
-					const throwResult = this.iterator.throw(err);
-					if (throwResult instanceof Promise) {
-						await throwResult.then(() => { throw err; });
-					}
-				}
+				this.iterator.throw?.(err);
 				throw err;
 			}
 		}
@@ -1486,9 +1565,7 @@ export class ExtendedIterable<T> {
 				return rval.then(rval => {
 					if (rval) {
 						// Early termination - call return() before exiting
-						if (iterator.return) {
-							iterator.return();
-						}
+						iterator.return?.();
 						return true;
 					}
 					return this.#asyncSome(iterator.next(), callback, index);
@@ -1497,9 +1574,7 @@ export class ExtendedIterable<T> {
 
 			if (rval) {
 				// Early termination - call return() before exiting
-				if (iterator.return) {
-					iterator.return();
-				}
+				iterator.return?.();
 				return true;
 			}
 
@@ -1511,7 +1586,8 @@ export class ExtendedIterable<T> {
 			}
 		}
 
-		// Iterator exhausted naturally - no need to call return()
+		// Iterator exhausted naturally - call return() before completing
+		iterator.return?.();
 		return false;
 	}
 
@@ -1540,9 +1616,7 @@ export class ExtendedIterable<T> {
 				return rval.then(rval => {
 					if (rval) {
 						// Early termination - call return() before exiting
-						if (iterator.return) {
-							iterator.return();
-						}
+						iterator.return?.();
 						return true;
 					}
 					return this.#asyncSome(iterator.next(), callback, index);
@@ -1551,16 +1625,15 @@ export class ExtendedIterable<T> {
 
 			if (rval) {
 				// Early termination - call return() before exiting
-				if (iterator.return) {
-					iterator.return();
-				}
+				iterator.return?.();
 				return true;
 			}
 
 			currentResult = await iterator.next();
 		}
 
-		// Iterator exhausted naturally - no need to call return()
+		// Iterator exhausted naturally - call return() before completing
+		iterator.return?.();
 		return false;
 	}
 
@@ -1626,6 +1699,8 @@ export class ExtendedIterable<T> {
 
 			// sync handling
 			if (result.done) {
+				// Iterator exhausted naturally - call return() before completing
+				this.iterator.return?.();
 				return result;
 			}
 
@@ -1656,6 +1731,8 @@ export class ExtendedIterable<T> {
 			}
 
 			if (currentResult.done) {
+				// Iterator exhausted naturally - call return() before completing
+				this.iterator.return?.();
 				return currentResult;
 			}
 

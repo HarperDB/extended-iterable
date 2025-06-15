@@ -32,11 +32,11 @@ describe('Chaining', () => {
 		const obj = createMixedAsyncIterableObject();
 		const iter = new ExtendedIterable(obj);
 		expect(await iter
-			// 0, 1, 2, 3, 4, 5
+			// 1, 2, 3, 4
 			.map(async item => item * 2)
-			// 0, 2, 4, 6, 8, 10
-			.take(4)
-			// 0, 2, 4, 6
+			// 2, 4, 6, 8
+			.take(3)
+			// 2, 4, 6
 			.filter(async item => item > 3)
 			// 4, 6
 			.asArray

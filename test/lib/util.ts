@@ -196,7 +196,7 @@ export function createAsyncIterableObject(): AsyncIterator<number> & {
  *
  * @returns The async iterable object.
  */
-export function createAsyncIterableObjectNextThrows(): AsyncIterator<number> & {
+export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIterator<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
@@ -206,7 +206,7 @@ export function createAsyncIterableObjectNextThrows(): AsyncIterator<number> & {
 		returned: 0,
 		thrown: 0,
 		async next() {
-			if (this.index > 1) {
+			if (this.index === throwOnValue) {
 				throw new Error('test');
 			}
 
@@ -321,7 +321,7 @@ export const testMatrix: Record<string, {
 		returned: number;
 		thrown: number;
 	};
-	asyncNextThrows?: () => any;
+	asyncNextThrows?: (throwOnValue?: number) => any;
 	asyncPartialData?: () => any;
 	asyncPartialNextThrows?: () => any;
 	syncData?: () => any;
@@ -340,7 +340,7 @@ export const testMatrix: Record<string, {
 		asyncData: () => createAsyncIterableObject(),
 		asyncEmptyData: () => createEmptyIterableObject(),
 		asyncMixedData: () => createMixedAsyncIterableObject(),
-		asyncNextThrows: () => createAsyncIterableObjectNextThrows(),
+		asyncNextThrows: (throwOnValue = 1) => createAsyncIterableObjectNextThrows(throwOnValue),
 		asyncPartialData: () => createPartialAsyncIterableObject(),
 		asyncPartialNextThrows: () => createPartialAsyncIterableObjectNextThrows(),
 		syncNextThrows: (throwOnValue = 1) => createIterableObjectNextThrows(throwOnValue),
