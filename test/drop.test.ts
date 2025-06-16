@@ -140,12 +140,12 @@ describe('.drop()', () => {
 						assertReturnedThrown(data, 0, 1);
 					});
 
-					it('should throw an error if the iterator next() throws an error at a specific index with async transformer', () => {
+					it('should reject if the iterator next() throws an error at a specific index with async transformer', async () => {
 						assert(testData.syncNextThrows);
 						const data = testData.syncNextThrows(3);
 						const iter = new ExtendedIterable(data, async (value) => value * 2);
 						const dropIter = iter.drop(2)[Symbol.iterator]();
-						expect(() => dropIter.next()).toThrowError(new Error('test'));
+						await expect(dropIter.next()).rejects.toThrow(new Error('test'));
 						assertReturnedThrown(data, 0, 1);
 					});
 				}
