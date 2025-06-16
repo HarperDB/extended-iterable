@@ -436,6 +436,7 @@ export class ExtendedIterable<T> {
 	static #DropIterator = class DropIterator<T> extends BaseIterator<T> {
 		#count: number;
 		#doneSkipping = false;
+		#isAsync = false;
 		#itemsDropped = 0;
 
 		constructor(
@@ -456,9 +457,19 @@ export class ExtendedIterable<T> {
 				return this.#transformResult(result);
 			}
 
-			let result = super.next();
+			let result: IteratorResult<T> | Promise<IteratorResult<T>>;
+
+			try {
+				result = super.next();
+			} catch (err) {
+				if (this.#isAsync) {
+					return Promise.resolve().then(() => { throw err; });
+				}
+				throw err;
+			}
 
 			if (result instanceof Promise) {
+				this.#isAsync = true;
 				return this.#asyncSkip(result)
 					.catch(err => {
 						if (this.iterator.throw) {
@@ -477,6 +488,7 @@ export class ExtendedIterable<T> {
 
 				// handle case where iterator becomes async mid-iteration
 				if (result instanceof Promise) {
+					this.#isAsync = true;
 					return this.#asyncSkip(result);
 				}
 			}
@@ -485,6 +497,7 @@ export class ExtendedIterable<T> {
 			try {
 				const transformedResult = this.#transformResult(result);
 				if (transformedResult instanceof Promise) {
+					this.#isAsync = true;
 					return transformedResult.catch(err => {
 						if (this.iterator.throw) {
 							return this.iterator.throw(err);
