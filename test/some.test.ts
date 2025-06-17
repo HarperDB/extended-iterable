@@ -1,186 +1,195 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import {
-	createEmptyIterableObject,
-	createIterableObject,
-	createMixedAsyncIterableObject,
-	simpleAsyncGenerator,
-	simpleGenerator
-} from './lib/util.js';
+import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
 describe('.some()', () => {
-	describe('array', () => {
-		it('should return true if some items satisfy the callback', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4]);
-			expect(iter.some(item => item % 2 === 0)).toBe(true);
-		});
+	for (const [name, testData] of Object.entries(dataMatrix)) {
+		if (hasSyncTestData(testData)) {
+			describe(`${name} sync`, () => {
+				if (testData.syncData) {
+					it('should return true if some items satisfy the callback', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(iter.some(item => item % 2 === 0)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should return false if none of the items satisfy the callback', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4]);
-			expect(iter.some(item => item > 4)).toBe(false);
-		});
+					it('should return false if none of the items satisfy the callback', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(iter.some(item => item > 4)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should return true if some items satisfy the callback with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
-			expect(iter.some(item => item % 2 === 0)).toBe(true);
-		});
+					it('should propagate error in callback function', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.some(() => {
+							throw new Error('error');
+						})).toThrowError(new Error('error'));
+						assertReturnedThrown(iter, 0, 1);
+					});
 
-		it('should return false if none of the items satisfy the callback with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
-			expect(iter.some(item => item > 10)).toBe(false);
-		});
+					it('should return true if some items satisfy the async callback', async () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(async item => item > 0)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should return false if the iterable is empty', () => {
-			const iter = new ExtendedIterable([]);
-			expect(iter.some(item => item < 5)).toBe(false);
-		});
+					it('should return false if none of the items satisfy the async callback', async () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(async item => item > 4)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should throw an error if the callback is not a function', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4]);
-			expect(() => iter.some('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
-		});
+					it('should propagate error in async callback function', async () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						await expect(iter.some(async () => {
+							throw new Error('error');
+						})).rejects.toThrowError(new Error('error'));
+						assertReturnedThrown(iter, 0, 1);
+					});
 
-		it('should propagate error in callback function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3]);
-				iter.some(() => {
-					throw new Error('error');
-				});
-			}).toThrowError(new Error('error'));
-		});
+					it('should throw an error if the callback is not a function', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.some('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
+						assertReturnedThrown(iter, 0, 1);
+					});
+				}
 
-		it('should propagate error in transformer function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3], value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				iter.some(() => false);
-			}).toThrowError(new Error('error'));
-		});
+				if (testData.syncEmptyData) {
+					it('should return false if the iterable is empty', () => {
+						const data = testData.syncEmptyData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(iter.some(item => item < 5)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
+				}
 
-		it('should return true if some items satisfy the async callback', async () => {
-			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.some(async () => true)).toEqual(true);
-		});
+				if (testData.syncNextThrows) {
+					it('should throw an error if the iterator next() throws an error', () => {
+						const data = testData.syncNextThrows!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.some(item => item < 3)).toThrowError(new Error('test'));
+						assertReturnedThrown(iter, 0, 1);
+					});
 
-		it('should return false if any item does not satisfy the async callback', async () => {
-			const iter = new ExtendedIterable([1, 2, 3]);
-			expect(await iter.some(async item => item > 3)).toEqual(false);
-		});
+					it('should throw an error if the iterator next() throws an error at a specific index', () => {
+						const data = testData.syncNextThrows!(2);
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.some(item => item > 3)).toThrowError(new Error('test'));
+						assertReturnedThrown(iter, 0, 1);
+					});
+				}
+			});
+		}
 
-		it('should propagate error in async callback function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable([1, 2, 3]);
-				await iter.some(async () => {
-					throw new Error('error');
-				});
-			}).rejects.toThrowError(new Error('error'));
-		});
-	});
+		if (hasAsyncTestData(testData)) {
+			describe(`${name} async`, () => {
+				if (testData.asyncData) {
+					it('should return true if some items satisfy the callback', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item % 2 === 0)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-	describe('iterable', () => {
-		it('should return true if some items satisfy the callback', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
-			expect(iter.some(item => item % 2 === 0)).toBe(true);
-		});
+					it('should return false if none of the items satisfy the callback', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item > 4)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should return false if none of the items satisfy the callback', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
-			expect(iter.some(item => item > 4)).toBe(false);
-		});
+					it('should propagate error in callback function', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						await expect(iter.some(() => {
+							throw new Error('error');
+						})).rejects.toThrowError(new Error('error'));
+						assertReturnedThrown(iter, 0, 1);
+					});
 
-		it('should return false if the iterable is empty', () => {
-			const iter = new ExtendedIterable(new Set([]));
-			expect(iter.some(item => item < 5)).toBe(false);
-		});
-	});
+					it('should return true if some items satisfy the async callback', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(async item => item % 2 === 0)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-	describe('iterable object', () => {
-		it('should return true if some items satisfy the callback', () => {
-			const iter = new ExtendedIterable(createIterableObject());
-			expect(iter.some(item => item % 2 === 0)).toBe(true);
-		});
+					it('should return false if none of the items satisfy the async callback', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(async item => item > 4)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-		it('should return false if none of the items satisfy the callback', () => {
-			const iter = new ExtendedIterable(createIterableObject());
-			expect(iter.some(item => item > 4)).toBe(false);
-		});
+					it('should propagate error in async callback function', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						await expect(iter.some(async () => {
+							throw new Error('error');
+						})).rejects.toThrowError(new Error('error'));
+						assertReturnedThrown(iter, 0, 1);
+					});
+				}
 
-		it('should return false if the iterable object is empty', () => {
-			const iter = new ExtendedIterable(createEmptyIterableObject());
-			expect(iter.some(item => item < 5)).toBe(false);
-		});
+				if (testData.asyncEmptyData) {
+					it('should return false if the iterable is empty', async () => {
+						const data = testData.asyncEmptyData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item < 5)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
+				}
 
-		it('should return a transformed iterable with mixed async and sync values', async () => {
-			const iter = new ExtendedIterable(createMixedAsyncIterableObject(), item => item * 2);
-			expect(await iter.some(item => item > 0 && item % 2 === 0)).toBe(true);
-		});
-	});
+				if (testData.asyncMixedData) {
+					it('should return true if some items satisfy the callback with mixed async and sync values', async () => {
+						const data = testData.asyncMixedData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item > 3)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
 
-	describe('generator function', () => {
-		it('should return true if some items satisfy the callback', () => {
-			const iter = new ExtendedIterable(simpleGenerator);
-			expect(iter.some(item => item % 2 === 0)).toBe(true);
-		});
+					it('should return false if none of the items satisfy the callback with mixed async and sync values', async () => {
+						const data = testData.asyncMixedData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item > 4)).toBe(false);
+						assertReturnedThrown(iter, 1, 0);
+					});
+				}
 
-		it('should return false if none of the items satisfy the callback', () => {
-			const iter = new ExtendedIterable(simpleGenerator);
-			expect(iter.some(item => item > 4)).toBe(false);
-		});
-	});
+				if (testData.asyncNextThrows) {
+					it('should reject if the iterator next() throws an error', async () => {
+						const data = testData.asyncNextThrows!();
+						const iter = new ExtendedIterable<number>(data);
+						await expect(iter.some(item => item < 3)).rejects.toThrow('test');
+						assertReturnedThrown(iter, 0, 1);
+					});
+				}
 
-	describe('async generator function', () => {
-		it('should return true if some items satisfy the callback', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(item => item % 2 === 0)).toBe(true);
-		});
+				if (testData.asyncPartialData) {
+					it('should loop over a partial iterable', async () => {
+						const data = testData.asyncPartialData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.some(item => item < 5)).toBe(true);
+						assertReturnedThrown(iter, 1, 0);
+					});
+				}
 
-		it('should return false if none of the items satisfy the callback', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(item => item > 4)).toBe(false);
-		});
-
-		it('should propagate error in callback function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.some(() => {
-					throw new Error('error');
-				});
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				await iter.some(() => false);
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should return true if some items satisfy the async callback', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(async item => item > 1)).toEqual(true);
-		});
-
-		it('should return false if any item does not satisfy the async callback', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator);
-			expect(await iter.some(async item => item > 3)).toEqual(false);
-		});
-
-		it('should propagate error in async callback function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator);
-				await iter.some(async () => {
-					throw new Error('error');
-				});
-			}).rejects.toThrowError(new Error('error'));
-		});
-	});
+				if (testData.asyncPartialNextThrows) {
+					it('should reject if partial iterator next() throws an error', async () => {
+						const data = testData.asyncPartialNextThrows!();
+						const iter = new ExtendedIterable<number>(data);
+						await expect(iter.some(item => item < 5)).rejects.toThrow('test');
+						assertReturnedThrown(iter, 0, 1);
+					});
+				}
+			});
+		}
+	}
 });

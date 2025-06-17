@@ -17,12 +17,6 @@ describe('.filter()', () => {
 			expect(filtered.asArray).toEqual([1, 2]);
 		});
 
-		it('should return a filtered iterable with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4], (value) => value * 2);
-			const filtered = iter.filter(item => item < 3);
-			expect(filtered.asArray).toEqual([2]);
-		});
-
 		it('should return an empty iterable if the callback returns false for all items', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			const filtered = iter.filter(item => item < 0);
@@ -49,18 +43,6 @@ describe('.filter()', () => {
 					}
 					return true;
 				}).asArray;
-			}).toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3], value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				iter.filter(_item => true).asArray;
 			}).toThrowError(new Error('error'));
 		});
 
@@ -106,12 +88,6 @@ describe('.filter()', () => {
 			expect(filtered.asArray).toEqual([1, 2]);
 		});
 
-		it('should return a filtered iterable with a transformer', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]), (value) => value * 2);
-			const filtered = iter.filter(item => item < 3);
-			expect(filtered.asArray).toEqual([2]);
-		});
-
 		it('should return an empty iterable if the callback returns false for all items', () => {
 			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]));
 			const filtered = iter.filter(item => item < 0);
@@ -141,12 +117,6 @@ describe('.filter()', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			const filtered = iter.filter(item => item < 3);
 			expect(filtered.asArray).toEqual([0, 1, 2]);
-		});
-
-		it('should return a filtered iterable with a transformer', () => {
-			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
-			const filtered = iter.filter(item => item < 3);
-			expect(filtered.asArray).toEqual([0, 2]);
 		});
 
 		it('should return an empty iterable if the callback returns false for all items', () => {
@@ -230,12 +200,6 @@ describe('.filter()', () => {
 			expect(filtered.asArray).toEqual([1, 2]);
 		});
 
-		it('should return a filtered iterable with a transformer', () => {
-			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
-			const filtered = iter.filter(item => item < 3);
-			expect(filtered.asArray).toEqual([2]);
-		});
-
 		it('should return an empty iterable if the callback returns false for all items', () => {
 			const iter = new ExtendedIterable(simpleGenerator);
 			const filtered = iter.filter(item => item < 0);
@@ -257,12 +221,6 @@ describe('.filter()', () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			const filtered = iter.filter(item => item < 3);
 			expect(await filtered.asArray).toEqual([1, 2]);
-		});
-
-		it('should return a filtered iterable with a transformer', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
-			const filtered = iter.filter(item => item < 3);
-			expect(await filtered.asArray).toEqual([2]);
 		});
 
 		it('should return an empty iterable if the callback returns false for all items', async () => {
@@ -289,18 +247,6 @@ describe('.filter()', () => {
 					}
 					return true;
 				}).asArray;
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				await iter.filter(() => true).asArray;
 			}).rejects.toThrowError(new Error('error'));
 		});
 

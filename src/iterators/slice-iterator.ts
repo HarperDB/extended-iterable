@@ -39,8 +39,6 @@ export class SliceIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-		debugger;
-
 		// check if we can return early
 		if (this.#endIndex !== undefined && this.#startIndex >= this.#endIndex) {
 			return super.return();

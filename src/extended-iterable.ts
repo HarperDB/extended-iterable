@@ -286,23 +286,30 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	every(callback: (value: T, index: number) => boolean | Promise<boolean>): boolean | Promise<boolean> {
-		if (typeof callback !== 'function') {
-			throw new TypeError('Callback is not a function');
+		const iterator = this.#iterator;
+		const handleError = (err: unknown) => {
+			const throwResult = iterator.throw?.(err);
+			if (throwResult instanceof Promise) {
+				return throwResult.then(() => { throw err; });
+			}
+			throw err;
+		};
+
+		try {
+			if (typeof callback !== 'function') {
+				throw new TypeError('Callback is not a function');
+			}
+		} catch (err) {
+			return handleError(err);
 		}
 
-		const iterator = this.#iterator;
 		let result = iterator.next();
 		let index = 0;
 
 		// if first result is a promise, we know this is async
 		if (result instanceof Promise) {
-			return this.#asyncEvery(result, callback, index).catch(err => {
-				const throwResult = iterator.throw?.(err);
-				if (throwResult instanceof Promise) {
-					return throwResult.then(() => { throw err; });
-				}
-				throw err;
-			});
+			return this.#asyncEvery(result, callback, index)
+				.catch(handleError);
 		}
 
 		// sync path
@@ -311,21 +318,19 @@ export class ExtendedIterable<T> {
 			try {
 				rval = callback(result.value, index++);
 			} catch (err) {
-				iterator.throw?.(err);
-				throw err;
+				return handleError(err);
 			}
 
 			if (rval instanceof Promise) {
-				return rval.then(rval => {
-					if (!rval) {
-						iterator.return?.();
-						return false;
-					}
-					return this.#asyncEvery(iterator.next(), callback, index);
-				}).catch(err => {
-					iterator.throw?.(err);
-					throw err;
-				});
+				return rval
+					.then(rval => {
+						if (!rval) {
+							iterator.return?.();
+							return false;
+						}
+						return this.#asyncEvery(iterator.next(), callback, index);
+					})
+					.catch(handleError);
 			}
 
 			if (!rval) {
@@ -336,10 +341,8 @@ export class ExtendedIterable<T> {
 
 			// if we encounter a Promise mid-iteration, switch to async
 			if (result instanceof Promise) {
-				return this.#asyncEvery(result, callback, index).catch(err => {
-					iterator.throw?.(err);
-					throw err;
-				});
+				return this.#asyncEvery(result, callback, index)
+					.catch(handleError);
 			}
 		}
 
@@ -1130,49 +1133,65 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	some(callback: (value: T, index: number) => boolean | Promise<boolean>): boolean | Promise<boolean> {
-		if (typeof callback !== 'function') {
-			throw new TypeError('Callback is not a function');
-		}
+		debugger;
 
 		const iterator = this.#iterator;
-		let result = iterator.next();
-		let index = 0;
+		const handleError = (err: unknown) => {
+			const throwResult = iterator.throw?.(err);
+			if (throwResult instanceof Promise) {
+				return throwResult.then(() => { throw err; });
+			}
+			throw err;
+		};
 
-		// if first result is a promise, we know this is async
-		if (result instanceof Promise) {
-			return this.#asyncSome(result, callback, index);
-		}
-
-		// sync path
-		while (!result.done) {
-			const rval = callback(result.value, index++);
-
-			if (rval instanceof Promise) {
-				return rval.then(rval => {
-					if (rval) {
-						// Early termination - call return() before exiting
-						iterator.return?.();
-						return true;
-					}
-					return this.#asyncSome(iterator.next(), callback, index);
-				});
+		try {
+			if (typeof callback !== 'function') {
+				throw new TypeError('Callback is not a function');
 			}
 
-			if (rval) {
-				// Early termination - call return() before exiting
-				iterator.return?.();
-				return true;
-			}
+			let result = iterator.next();
+			let index = 0;
 
-			result = iterator.next();
-
-			// if we encounter a Promise mid-iteration, switch to async
+			// if first result is a promise, we know this is async
 			if (result instanceof Promise) {
-				return this.#asyncSome(result, callback, index);
+				return this.#asyncSome(result, callback, index)
+					.catch(handleError);
 			}
+
+			// sync path
+			while (!result.done) {
+				const rval = callback(result.value, index++);
+
+				if (rval instanceof Promise) {
+					return rval
+						.then(rval => {
+							if (rval) {
+								iterator.return?.();
+								return true;
+							}
+							return this.#asyncSome(iterator.next(), callback, index);
+						})
+						.catch(handleError);
+				}
+
+				if (rval) {
+					// Early termination - call return() before exiting
+					iterator.return?.();
+					return true;
+				}
+
+				result = iterator.next();
+
+				// if we encounter a Promise mid-iteration, switch to async
+				if (result instanceof Promise) {
+					return this.#asyncSome(result, callback, index)
+						.catch(handleError);
+				}
+			}
+		} catch (err) {
+			return handleError(err);
 		}
 
-		// Iterator exhausted naturally - call return() before completing
 		iterator.return?.();
 		return false;
 	}

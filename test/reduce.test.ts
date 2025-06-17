@@ -16,11 +16,6 @@ describe('.reduce()', () => {
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(10);
 		});
 
-		it('should reduce the iterable to a single value with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
-			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(20);
-		});
-
 		it('should return zero if the iterable is empty', () => {
 			const iter = new ExtendedIterable([]);
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(0);
@@ -34,11 +29,6 @@ describe('.reduce()', () => {
 		it('should reduce the iterable to a single value without an initial value', () => {
 			const iter = new ExtendedIterable([1, 2, 3, 4]);
 			expect(iter.reduce((acc, item) => acc ? acc + item : item)).toBe(10);
-		});
-
-		it('should reduce the iterable to a single value with a transformer and without an initial value', () => {
-			const iter = new ExtendedIterable([1, 2, 3, 4], item => item * 2);
-			expect(iter.reduce((acc, item) => acc ? acc + item : item)).toBe(20);
 		});
 
 		it('should throw an error if the iterable is empty and no initial value is provided', () => {
@@ -55,18 +45,6 @@ describe('.reduce()', () => {
 					}
 					return acc + item;
 				});
-			}).toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3], value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				iter.reduce((acc, item) => acc + item);
 			}).toThrowError(new Error('error'));
 		});
 
@@ -91,11 +69,6 @@ describe('.reduce()', () => {
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(10);
 		});
 
-		it('should reduce the iterable to a single value with a transformer', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3, 4]), item => item * 2);
-			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(20);
-		});
-
 		it('should return zero if the iterable is empty', () => {
 			const iter = new ExtendedIterable(new Set([]));
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(0);
@@ -106,11 +79,6 @@ describe('.reduce()', () => {
 		it('should reduce the iterable to a single value', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(6);
-		});
-
-		it('should reduce the iterable to a single value with a transformer', () => {
-			const iter = new ExtendedIterable(createIterableObject(), item => item * 2);
-			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(12);
 		});
 
 		it('should return zero if the iterable object is empty', () => {
@@ -129,11 +97,6 @@ describe('.reduce()', () => {
 			const iter = new ExtendedIterable(simpleGenerator);
 			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(6);
 		});
-
-		it('should reduce the iterable to a single value with a transformer', () => {
-			const iter = new ExtendedIterable(simpleGenerator, item => item * 2);
-			expect(iter.reduce((acc, item) => acc + item, 0)).toBe(12);
-		});
 	});
 
 	describe('async generator function', () => {
@@ -142,19 +105,9 @@ describe('.reduce()', () => {
 			expect(await iter.reduce((acc, item) => acc + item, 0)).toBe(6);
 		});
 
-		it('should reduce the iterable to a single value with a transformer', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator, item => item * 2);
-			expect(await iter.reduce((acc, item) => acc + item, 0)).toBe(12);
-		});
-
 		it('should reduce the iterable to a single value without an initial value', async () => {
 			const iter = new ExtendedIterable<number>(simpleAsyncGenerator);
 			expect(await iter.reduce((acc, item) => acc ? acc + item : item)).toBe(6);
-		});
-
-		it('should reduce the iterable to a single value with a transformer and without an initial value', async () => {
-			const iter = new ExtendedIterable<number>(simpleAsyncGenerator, item => item * 2);
-			expect(await iter.reduce((acc, item) => acc ? acc + item : item)).toBe(12);
 		});
 
 		it('should reduce the iterable to a single value without an initial value', async () => {
@@ -171,18 +124,6 @@ describe('.reduce()', () => {
 					}
 					return acc + item;
 				}, 0);
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				await iter.reduce(async (acc, item) => acc + item, 0);
 			}).rejects.toThrowError(new Error('error'));
 		});
 

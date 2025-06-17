@@ -20,11 +20,6 @@ describe('.flatMap()', () => {
 			expect(iter.flatMap(item => item).asArray).toEqual([1, 2, 3]);
 		});
 
-		it('should return a flattened iterable with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3], (value) => value * 2);
-			expect(iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
-		});
-
 		it('should return an empty iterable if the array is empty', () => {
 			const iter = new ExtendedIterable([]);
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([]);
@@ -43,18 +38,6 @@ describe('.flatMap()', () => {
 						throw new Error('error');
 					}
 				}).asArray;
-			}).toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3], value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				iter.flatMap(item => [item, item]).asArray;
 			}).toThrowError(new Error('error'));
 		});
 
@@ -79,11 +62,6 @@ describe('.flatMap()', () => {
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([1, 1, 2, 2, 3, 3]);
 		});
 
-		it('should return a flattened iterable with a transformer', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3]), (value) => value * 2);
-			expect(iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
-		});
-
 		it('should return an empty iterable if the iterable is empty', () => {
 			const iter = new ExtendedIterable(new Set([]));
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([]);
@@ -94,11 +72,6 @@ describe('.flatMap()', () => {
 		it('should return a flattened iterable', () => {
 			const iter = new ExtendedIterable(createIterableObject());
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
-		});
-
-		it('should return a flattened iterable with a transformer', () => {
-			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
-			expect(iter.flatMap(item => [item, item]).asArray).toEqual([0, 0, 2, 2, 4, 4, 6, 6]);
 		});
 
 		it('should return an empty iterable if the iterable object is empty', () => {
@@ -118,11 +91,6 @@ describe('.flatMap()', () => {
 			expect(iter.flatMap(item => [item, item]).asArray).toEqual([1, 1, 2, 2, 3, 3]);
 		});
 
-		it('should return a flattened iterable with a transformer', () => {
-			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
-			expect(iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
-		});
-
 		it('should loop over the iterable', () => {
 			const items: number[] = [];
 			const iter = new ExtendedIterable(simpleGenerator);
@@ -137,11 +105,6 @@ describe('.flatMap()', () => {
 		it('should return a flattened iterable', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			expect(await iter.flatMap(item => [item, item]).asArray).toEqual([1, 1, 2, 2, 3, 3]);
-		});
-
-		it('should return a flattened iterable with a transformer', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
-			expect(await iter.flatMap(item => [item, item]).asArray).toEqual([2, 2, 4, 4, 6, 6]);
 		});
 
 		it('should async loop over the iterable', async () => {
@@ -161,18 +124,6 @@ describe('.flatMap()', () => {
 						throw new Error('error');
 					}
 				}).asArray;
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				await iter.flatMap(item => [item, item]).asArray;
 			}).rejects.toThrowError(new Error('error'));
 		});
 

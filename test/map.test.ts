@@ -15,11 +15,6 @@ describe('.map()', () => {
 			expect(iter.map(item => item * 2).asArray).toEqual([2, 4, 6]);
 		});
 
-		it('should return a mapped iterable with a transformer', () => {
-			const iter = new ExtendedIterable([1, 2, 3], (value) => value * 2);
-			expect(iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
-		});
-
 		it('should return an empty iterable if the array is empty', () => {
 			const iter = new ExtendedIterable([]);
 			expect(iter.map(item => item * 2).asArray).toEqual([]);
@@ -38,18 +33,6 @@ describe('.map()', () => {
 						throw new Error('error');
 					}
 				}).asArray;
-			}).toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', () => {
-			expect(() => {
-				const iter = new ExtendedIterable([1, 2, 3], value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				iter.map(item => item * 2).asArray;
 			}).toThrowError(new Error('error'));
 		});
 
@@ -74,11 +57,6 @@ describe('.map()', () => {
 			expect(iter.map(item => item * 2).asArray).toEqual([2, 4, 6]);
 		});
 
-		it('should return a mapped iterable with a transformer', () => {
-			const iter = new ExtendedIterable(new Set([1, 2, 3]), (value) => value * 2);
-			expect(iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
-		});
-
 		it('should return an empty iterable if the iterable is empty', () => {
 			const iter = new ExtendedIterable(new Set([]));
 			expect(iter.map(item => item * 2).asArray).toEqual([]);
@@ -91,11 +69,6 @@ describe('.map()', () => {
 			expect(iter.map(item => item * 2).asArray).toEqual([0, 2, 4, 6]);
 		});
 
-		it('should return a mapped iterable with a transformer', () => {
-			const iter = new ExtendedIterable(createIterableObject(), (value) => value * 2);
-			expect(iter.map(item => item * 2).asArray).toEqual([0, 4, 8, 12]);
-		});
-
 		it('should return an empty iterable if the iterable object is empty', () => {
 			const iter = new ExtendedIterable(createEmptyIterableObject());
 			expect(iter.map(item => item * 2).asArray).toEqual([]);
@@ -105,40 +78,12 @@ describe('.map()', () => {
 			const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
 			expect(await iterator.map(item => item * 2).asArray).toEqual([0, 2, 4, 6, 8, 10]);
 		});
-
-		// it('should call return() on source iterable', async () => {
-		// 	const obj = createIterableObject();
-		// 	const iter = new ExtendedIterable<number>(obj);
-		// 	expect(await iter
-		// 		.map(item => {
-		// 			return item * 2;
-		// 		})
-		// 		.asArray
-		// 	).toEqual([4, 6, 8]);
-		// 	expect(obj.returned).toEqual(true);
-		// });
-
-		// it('should call throw() on source iterable if the callback throws an error', async () => {
-		// 	const obj = createIterableObject();
-		// 	const iter = new ExtendedIterable<number>(obj);
-		// 	await expect(async () => {
-		// 		await iter.map(item => {
-		// 			throw new Error('error');
-		// 		}).asArray;
-		// 	}).rejects.toThrowError(new Error('error'));
-		// 	expect(obj.thrown).toEqual(true);
-		// });
 	});
 
 	describe('generator function', () => {
 		it('should return a mapped iterable', () => {
 			const iter = new ExtendedIterable(simpleGenerator);
 			expect(iter.map(item => item * 2).asArray).toEqual([2, 4, 6]);
-		});
-
-		it('should return a mapped iterable with a transformer', () => {
-			const iter = new ExtendedIterable(simpleGenerator, (value) => value * 2);
-			expect(iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
 		});
 
 		it('should loop over the iterable', () => {
@@ -155,11 +100,6 @@ describe('.map()', () => {
 		it('should return a mapped iterable', async () => {
 			const iter = new ExtendedIterable(simpleAsyncGenerator);
 			expect(await iter.map(item => item * 2).asArray).toEqual([2, 4, 6]);
-		});
-
-		it('should return a mapped iterable with a transformer', async () => {
-			const iter = new ExtendedIterable(simpleAsyncGenerator, (value) => value * 2);
-			expect(await iter.map(item => item * 2).asArray).toEqual([4, 8, 12]);
 		});
 
 		it('should async loop over the iterable', async () => {
@@ -179,18 +119,6 @@ describe('.map()', () => {
 						throw new Error('error');
 					}
 				}).asArray;
-			}).rejects.toThrowError(new Error('error'));
-		});
-
-		it('should propagate error in transformer function', async () => {
-			await expect(async () => {
-				const iter = new ExtendedIterable(simpleAsyncGenerator, value => {
-					if (value === 2) {
-						throw new Error('error');
-					}
-					return value * 2;
-				});
-				await iter.map(item => item * 2).asArray;
 			}).rejects.toThrowError(new Error('error'));
 		});
 
