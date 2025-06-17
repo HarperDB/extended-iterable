@@ -1,10 +1,11 @@
 import { BaseIterator } from './iterators/base-iterator.js';
 import { ConcatIterator } from './iterators/concat-iterator.js';
 import { DropIterator } from './iterators/drop-iterator.js';
+import { FilterIterator } from './iterators/filter-iterator.js';
 import { TakeIterator } from './iterators/take-iterator.js';
 import { resolveIterator } from './iterators/resolve-iterator.js';
-import type { IterableLike } from './types.js';
 import { SliceIterator } from './iterators/slice-iterator.js';
+import type { IterableLike } from './types.js';
 
 /**
  * An iterable that provides a rich set of methods for working with ranges of
@@ -406,98 +407,10 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	filter(callback: (value: T, index: number) => boolean | Promise<boolean>): ExtendedIterable<T> {
-		if (typeof callback !== 'function') {
-			throw new TypeError('Callback is not a function');
-		}
-
 		return new ExtendedIterable(
-			new ExtendedIterable.FilterIterator(this.#iterator, callback)
+			new FilterIterator(this.#iterator, callback)
 		);
 	}
-
-	static FilterIterator = class FilterIterator<T> extends BaseIterator<T> {
-		#index = 0;
-		#callback: (value: T, index: number) => boolean | Promise<boolean>;
-
-		constructor(
-			iterator: Iterator<T> | AsyncIterator<T>,
-			callback: (value: T, index: number) => boolean | Promise<boolean>
-		) {
-			super(iterator);
-			this.#callback = callback;
-		}
-
-		next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-			let result = super.next();
-
-			// async handling
-			if (result instanceof Promise) {
-				return this.#asyncFilter(result);
-			}
-
-			// sync handling
-			while (!result.done) {
-				const rval = this.#processResult(result);
-				if (rval) {
-					return rval;
-				}
-
-				result = super.next();
-
-				// handle sync-to-async transition
-				if (result instanceof Promise) {
-					return this.#asyncFilter(result);
-				}
-			}
-
-			return result;
-		}
-
-		async #asyncFilter(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
-			let currentResult = await result;
-
-			while (!currentResult.done) {
-				const rval = this.#processResult(currentResult);
-				if (rval) {
-					return rval;
-				}
-				currentResult = await this.next();
-			}
-
-			return currentResult;
-		}
-
-		#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
-			const { value } = result;
-			let keep: boolean | Promise<boolean>;
-			try {
-				keep = this.#callback(value, this.#index++);
-			} catch (err) {
-				return this.throw(err);
-			}
-
-			if (keep instanceof Promise) {
-				return keep
-					.then(keep => {
-						if (keep) {
-							return {
-								done: false,
-								value
-							};
-						}
-						return this.next();
-					})
-					.catch(err => this.throw(err));
-			}
-
-			if (keep) {
-				return {
-					done: false,
-					value
-				};
-			}
-		}
-	};
 
 	/**
 	 * Returns the first item of the iterable for which the callback returns
@@ -1133,8 +1046,6 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	some(callback: (value: T, index: number) => boolean | Promise<boolean>): boolean | Promise<boolean> {
-		debugger;
-
 		const iterator = this.#iterator;
 		const handleError = (err: unknown) => {
 			const throwResult = iterator.throw?.(err);

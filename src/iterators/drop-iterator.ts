@@ -11,17 +11,14 @@ export class DropIterator<T> extends BaseIterator<T> {
 	) {
 		super(iterator);
 
-		try {
-			if (typeof count !== 'number') {
-				throw new TypeError('Count is not a number');
-			}
-			if (count < 0) {
-				throw new RangeError('Count must be a positive number');
-			}
-			this.#count = count;
-		} catch (err) {
-			super.throw(err);
+		if (typeof count !== 'number') {
+			super.throw(new TypeError('Count is not a number'));
 		}
+		if (count < 0) {
+			super.throw(new RangeError('Count must be a positive number'));
+		}
+
+		this.#count = count;
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {

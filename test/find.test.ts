@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTests } from './lib/util.js';
+import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
 describe('.find()', () => {
 	for (const [name, testData] of Object.entries(dataMatrix)) {
-		if (hasSyncTests(testData)) {
+		if (hasSyncTestData(testData)) {
 			describe(`${name} sync`, () => {
 				if (testData.syncData) {
 					it('should return the first item that satisfies the callback', () => {

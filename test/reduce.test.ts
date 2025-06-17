@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import {
-	createEmptyIterableObject,
-	createIterableObject,
-	createMixedAsyncIterableObject,
-	emptyAsyncGenerator,
-	simpleAsyncGenerator,
-	simpleGenerator
-} from './lib/util.js';
+import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
+
 
 describe('.reduce()', () => {
 	describe('array', () => {

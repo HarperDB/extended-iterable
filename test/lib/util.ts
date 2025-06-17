@@ -323,14 +323,6 @@ export const dataMatrix: Record<string, {
 	syncNextThrows?: (throwOnValue?: number) => any;
 	syncPartialData?: () => any;
 }> = {
-	// 'array': {
-	// 	syncData: () => [1, 2, 3, 4],
-	// 	syncEmptyData: () => []
-	// },
-	// 'iterable': {
-	// 	syncData: () => new Set([1, 2, 3, 4]),
-	// 	syncEmptyData: () => new Set()
-	// },
 	'iterable object': {
 		asyncData: () => createAsyncIterableObject(),
 		asyncEmptyData: () => createEmptyIterableObject(),
@@ -344,12 +336,20 @@ export const dataMatrix: Record<string, {
 		syncNextThrows: (throwOnValue = 1) => createIterableObject({ throwOnValue }),
 		syncPartialData: () => createIterableObject({ partial: true })
 	},
+	// 'array': {
+	// 	syncData: () => [1, 2, 3, 4],
+	// 	syncEmptyData: () => []
+	// },
 	// 'generator function': {
 	// 	asyncData: () => simpleAsyncGenerator,
 	// 	asyncEmptyData: () => emptyAsyncGenerator,
 	// 	syncData: () => simpleGenerator,
 	// 	syncEmptyData: () => emptyGenerator,
-	// }
+	// },
+	// 'iterable': {
+	// 	syncData: () => new Set([1, 2, 3, 4]),
+	// 	syncEmptyData: () => new Set()
+	// },
 };
 
 export function hasSyncTestData(testData: any) {

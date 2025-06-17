@@ -13,25 +13,21 @@ export class SliceIterator<T> extends BaseIterator<T> {
 	) {
 		super(iterator);
 
-		try {
-			if (startIndex !== undefined) {
-				if (typeof startIndex !== 'number') {
-					throw new TypeError('Start is not a number');
-				}
-				if (startIndex < 0) {
-					throw new RangeError('Start must be a positive number');
-				}
+		if (startIndex !== undefined) {
+			if (typeof startIndex !== 'number') {
+				super.throw(new TypeError('Start is not a number'));
 			}
-			if (endIndex !== undefined) {
-				if (typeof endIndex !== 'number') {
-					throw new TypeError('End is not a number');
-				}
-				if (endIndex < 0) {
-					throw new RangeError('End must be a positive number');
-				}
+			if (startIndex < 0) {
+				super.throw(new RangeError('Start must be a positive number'));
 			}
-		} catch (err) {
-			super.throw(err);
+		}
+		if (endIndex !== undefined) {
+			if (typeof endIndex !== 'number') {
+				super.throw(new TypeError('End is not a number'));
+			}
+			if (endIndex < 0) {
+				super.throw(new RangeError('End must be a positive number'));
+			}
 		}
 
 		this.#startIndex = startIndex ?? 0;

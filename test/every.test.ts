@@ -204,25 +204,4 @@ describe('.every()', () => {
 			});
 		}
 	}
-
-
-		// it('should return true if all items satisfy the callback with mixed async and sync values', async () => {
-		// 	const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-		// 	expect(await iterator.every(item => item < 8)).toBe(true);
-		// });
-
-		// it('should return false if any item does not satisfy the callback with mixed async and sync values', async () => {
-		// 	const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-		// 	expect(await iterator.every(item => item < 2)).toBe(false);
-		// });
-
-		// it('should return true if all items satisfy the async callback with mixed async and sync values', async () => {
-		// 	const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-		// 	expect(await iterator.every(async item => item < 8)).toBe(true);
-		// });
-
-		// it('should return false if any item does not satisfy the callback with mixed async and sync values', async () => {
-		// 	const iterator = new ExtendedIterable(createMixedAsyncIterableObject());
-		// 	expect(await iterator.every(async item => item > 3)).toBe(false);
-		// });
 });

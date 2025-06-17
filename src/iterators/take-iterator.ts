@@ -10,23 +10,19 @@ export class TakeIterator<T> extends BaseIterator<T> {
 	) {
 		super(iterator);
 
-		try {
-			if (typeof limit !== 'number') {
-				throw new TypeError('Limit is not a number');
-			}
-			if (limit < 0) {
-				throw new RangeError('Limit must be a positive number');
-			}
-			this.#limit = limit;
-		} catch (err) {
-			super.throw(err);
+		if (typeof limit !== 'number') {
+			super.throw(new TypeError('Limit is not a number'));
 		}
+		if (limit < 0) {
+			super.throw(new RangeError('Limit must be a positive number'));
+		}
+
+		this.#limit = limit;
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
 		if (this.#count >= this.#limit) {
-			this.iterator.return?.();
-			return { done: true, value: undefined };
+			return super.return();
 		}
 
 		let result: IteratorResult<T> | Promise<IteratorResult<T>>;

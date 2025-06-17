@@ -24,13 +24,6 @@ describe('.forEach()', () => {
 						})).toThrowError(new Error('test'));
 					});
 
-					it('should throw an error if the callback is not a function', () => {
-						const data = testData.syncData!();
-						const iter = new ExtendedIterable<number>(data);
-						expect(() => iter.forEach('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
-						assertReturnedThrown(data, 0, 1);
-					});
-
 					it('should loop over the iterable with an async callback', async () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
@@ -46,6 +39,13 @@ describe('.forEach()', () => {
 						await expect(iter.forEach(async () => {
 							throw new Error('test');
 						})).rejects.toThrowError(new Error('test'));
+						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should throw an error if the callback is not a function', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.forEach('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
 						assertReturnedThrown(data, 0, 1);
 					});
 				}
