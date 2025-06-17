@@ -11,14 +11,14 @@ describe('.some()', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.some(item => item % 2 === 0)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should return false if none of the items satisfy the callback', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should propagate error in callback function', () => {
@@ -27,21 +27,21 @@ describe('.some()', () => {
 						expect(() => iter.some(() => {
 							throw new Error('error');
 						})).toThrowError(new Error('error'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 
 					it('should return true if some items satisfy the async callback', async () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item > 0)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should return false if none of the items satisfy the async callback', async () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item > 4)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should propagate error in async callback function', async () => {
@@ -50,14 +50,14 @@ describe('.some()', () => {
 						await expect(iter.some(async () => {
 							throw new Error('error');
 						})).rejects.toThrowError(new Error('error'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 
 					it('should throw an error if the callback is not a function', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.some('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 
@@ -66,7 +66,7 @@ describe('.some()', () => {
 						const data = testData.syncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.some(item => item < 5)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -75,14 +75,14 @@ describe('.some()', () => {
 						const data = testData.syncNextThrows!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.some(item => item < 3)).toThrowError(new Error('test'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 
 					it('should throw an error if the iterator next() throws an error at a specific index', () => {
 						const data = testData.syncNextThrows!(2);
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.some(item => item > 3)).toThrowError(new Error('test'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 			});
@@ -95,14 +95,14 @@ describe('.some()', () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item % 2 === 0)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should return false if none of the items satisfy the callback', async () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should propagate error in callback function', async () => {
@@ -111,21 +111,21 @@ describe('.some()', () => {
 						await expect(iter.some(() => {
 							throw new Error('error');
 						})).rejects.toThrowError(new Error('error'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 
 					it('should return true if some items satisfy the async callback', async () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item % 2 === 0)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should return false if none of the items satisfy the async callback', async () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item > 4)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should propagate error in async callback function', async () => {
@@ -134,7 +134,7 @@ describe('.some()', () => {
 						await expect(iter.some(async () => {
 							throw new Error('error');
 						})).rejects.toThrowError(new Error('error'));
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 
@@ -143,7 +143,7 @@ describe('.some()', () => {
 						const data = testData.asyncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item < 5)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -152,14 +152,14 @@ describe('.some()', () => {
 						const data = testData.asyncMixedData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item > 3)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 
 					it('should return false if none of the items satisfy the callback with mixed async and sync values', async () => {
 						const data = testData.asyncMixedData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -168,7 +168,7 @@ describe('.some()', () => {
 						const data = testData.asyncNextThrows!();
 						const iter = new ExtendedIterable<number>(data);
 						await expect(iter.some(item => item < 3)).rejects.toThrow('test');
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 
@@ -177,7 +177,7 @@ describe('.some()', () => {
 						const data = testData.asyncPartialData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item < 5)).toBe(true);
-						assertReturnedThrown(iter, 1, 0);
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -186,7 +186,7 @@ describe('.some()', () => {
 						const data = testData.asyncPartialNextThrows!();
 						const iter = new ExtendedIterable<number>(data);
 						await expect(iter.some(item => item < 5)).rejects.toThrow('test');
-						assertReturnedThrown(iter, 0, 1);
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 			});

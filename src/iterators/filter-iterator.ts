@@ -18,77 +18,57 @@ export class FilterIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-		debugger;
-		let result = super.next();
+		try {
+			let result = super.next();
 
-		// async handling
-		if (result instanceof Promise) {
-			return this.#asyncFilter(result);
-		}
-
-		// sync handling
-		while (!result.done) {
-			const rval = this.#processResult(result);
-			if (rval instanceof Promise) {
-				return this.#asyncFilter(rval);
-			}
-			if (rval) {
-				return rval;
-			}
-
-			result = super.next();
-
-			// handle sync-to-async transition
+			// async handling
 			if (result instanceof Promise) {
-				return this.#asyncFilter(result);
+				return this.#asyncFilter(result)
+					.catch(err => super.throw(err));
 			}
-		}
 
-		return result;
+			// sync handling
+			while (!result.done) {
+				const keep = this.#callback(result.value, this.#index++);
+
+				if (keep instanceof Promise) {
+					return keep.then(keep => {
+						if (keep) {
+							return result;
+						}
+						return this.next();
+					});
+				}
+
+				if (keep) {
+					return result;
+				}
+
+				result = super.next();
+
+				// handle sync-to-async transition
+				if (result instanceof Promise) {
+					return this.#asyncFilter(result);
+				}
+			}
+
+			return super.return(result.value);
+		} catch (err) {
+			return super.throw(err);
+		}
 	}
 
 	async #asyncFilter(result: Promise<IteratorResult<T>>): Promise<IteratorResult<T>> {
 		let currentResult = await result;
 
 		while (!currentResult.done) {
-			const rval = this.#processResult(currentResult);
-			if (rval) {
-				return rval;
+			const keep = await this.#callback(currentResult.value, this.#index++);
+			if (keep) {
+				return currentResult;
 			}
 			currentResult = await super.next();
 		}
 
-		return currentResult;
-	}
-
-	#processResult(result: IteratorYieldResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> | undefined {
-		const { value } = result;
-		let keep: boolean | Promise<boolean>;
-		try {
-			keep = this.#callback(value, this.#index++);
-		} catch (err) {
-			return super.throw(err);
-		}
-
-		if (keep instanceof Promise) {
-			return keep
-				.then(keep => {
-					if (keep) {
-						return {
-							done: false,
-							value
-						};
-					}
-					return this.next();
-				})
-				.catch(err => super.throw(err));
-		}
-
-		if (keep) {
-			return {
-				done: false,
-				value
-			};
-		}
+		return super.return(currentResult.value);
 	}
 }

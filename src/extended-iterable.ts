@@ -300,51 +300,45 @@ export class ExtendedIterable<T> {
 			if (typeof callback !== 'function') {
 				throw new TypeError('Callback is not a function');
 			}
-		} catch (err) {
-			return handleError(err);
-		}
 
-		let result = iterator.next();
-		let index = 0;
+			let result = iterator.next();
+			let index = 0;
 
-		// if first result is a promise, we know this is async
-		if (result instanceof Promise) {
-			return this.#asyncEvery(result, callback, index)
-				.catch(handleError);
-		}
-
-		// sync path
-		while (!result.done) {
-			let rval: boolean | Promise<boolean>;
-			try {
-				rval = callback(result.value, index++);
-			} catch (err) {
-				return handleError(err);
-			}
-
-			if (rval instanceof Promise) {
-				return rval
-					.then(rval => {
-						if (!rval) {
-							iterator.return?.();
-							return false;
-						}
-						return this.#asyncEvery(iterator.next(), callback, index);
-					})
-					.catch(handleError);
-			}
-
-			if (!rval) {
-				iterator.return?.();
-				return false;
-			}
-			result = iterator.next() as IteratorResult<T>;
-
-			// if we encounter a Promise mid-iteration, switch to async
+			// if first result is a promise, we know this is async
 			if (result instanceof Promise) {
 				return this.#asyncEvery(result, callback, index)
 					.catch(handleError);
 			}
+
+			// sync path
+			while (!result.done) {
+				const rval = callback(result.value, index++);
+				if (rval instanceof Promise) {
+					return rval
+						.then(rval => {
+							if (!rval) {
+								iterator.return?.();
+								return false;
+							}
+							return this.#asyncEvery(iterator.next(), callback, index);
+						})
+						.catch(handleError);
+				}
+
+				if (!rval) {
+					iterator.return?.();
+					return false;
+				}
+				result = iterator.next() as IteratorResult<T>;
+
+				// if we encounter a Promise mid-iteration, switch to async
+				if (result instanceof Promise) {
+					return this.#asyncEvery(result, callback, index)
+						.catch(handleError);
+				}
+			}
+		} catch (err) {
+			return handleError(err);
 		}
 
 		iterator.return?.();
@@ -907,63 +901,83 @@ export class ExtendedIterable<T> {
 	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>, initialValue: U): U | Promise<U>;
 	reduce(callback: (previousValue: T, currentValue: T, currentIndex: number) => T | Promise<T>): T | Promise<T>;
 	reduce<U>(callback: (previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>, initialValue?: U): U | Promise<U> {
-		if (typeof callback !== 'function') {
-			throw new TypeError('Callback is not a function');
-		}
-
 		const iterator = this.#iterator;
-		const hasInitialValue = arguments.length >= 2;
 		let index = 0;
 		let accumulator: U;
+		const handleError = (err: unknown): U | Promise<U> => {
+			if (iterator.throw) {
+				const throwResult = iterator.throw(err);
+				if (throwResult instanceof Promise) {
+					return throwResult.then(() => { throw err; });
+				}
+			}
+			throw err;
+		};
 
-		// handle initial value setup
-		if (!hasInitialValue) {
-			const firstResult = iterator.next();
+		debugger;
 
-			// if first result is a promise, we know this is async
-			if (firstResult instanceof Promise) {
-				return this.#asyncReduce(firstResult, callback, undefined as any, index, false);
+		try {
+			if (typeof callback !== 'function') {
+				throw new TypeError('Callback is not a function');
 			}
 
-			if (firstResult.done) {
-				throw new TypeError('Reduce of empty iterable with no initial value');
+			// handle initial value setup
+			if (arguments.length < 2) {
+				const firstResult = iterator.next();
+
+				// if first result is a promise, we know this is async
+				if (firstResult instanceof Promise) {
+					return this.#asyncReduce(firstResult, callback, undefined as any, index, false)
+						.catch(err => handleError(err));
+				}
+
+				if (firstResult.done) {
+					throw new TypeError('Reduce of empty iterable with no initial value');
+				}
+
+				accumulator = firstResult.value as unknown as U;
+				index = 1;
+			} else {
+				accumulator = initialValue!;
 			}
 
-			accumulator = firstResult.value as unknown as U;
-			index = 1;
-		} else {
-			accumulator = initialValue!;
-		}
+			// process remaining elements synchronously
+			let result = iterator.next();
 
-		// process remaining elements synchronously
-		let result = iterator.next();
-
-		// if we encounter a Promise, switch to async
-		if (result instanceof Promise) {
-			return this.#asyncReduce(result, callback, accumulator, index, true);
-		}
-
-		// continue with synchronous iteration
-		while (!result.done) {
-			const callbackResult = callback(accumulator, result.value, index++);
-
-			// if callback returns a promise, switch to async
-			if (callbackResult instanceof Promise) {
-				return callbackResult.then(resolvedAccumulator => {
-					accumulator = resolvedAccumulator;
-					return this.#asyncReduce(iterator.next(), callback, accumulator, index, true);
-				});
-			}
-
-			accumulator = callbackResult;
-			result = iterator.next();
-
-			// if we encounter a Promise mid-iteration, switch to async
+			// if we encounter a Promise, switch to async
 			if (result instanceof Promise) {
-				return this.#asyncReduce(result, callback, accumulator, index, true);
+				return this.#asyncReduce(result, callback, accumulator, index, true)
+					.catch(err => handleError(err));
 			}
+
+			// continue with synchronous iteration
+			while (!result.done) {
+				const callbackResult = callback(accumulator, result.value, index++);
+
+				// if callback returns a promise, switch to async
+				if (callbackResult instanceof Promise) {
+					return callbackResult
+						.then(resolvedAccumulator => {
+							accumulator = resolvedAccumulator;
+							return this.#asyncReduce(iterator.next(), callback, accumulator, index, true);
+						})
+						.catch(err => handleError(err));
+				}
+
+				accumulator = callbackResult;
+				result = iterator.next();
+
+				// if we encounter a Promise mid-iteration, switch to async
+				if (result instanceof Promise) {
+					return this.#asyncReduce(result, callback, accumulator, index, true)
+						.catch(err => handleError(err));
+				}
+			}
+		} catch (err) {
+			return handleError(err);
 		}
 
+		iterator.return?.();
 		return accumulator;
 	}
 
@@ -989,10 +1003,6 @@ export class ExtendedIterable<T> {
 
 		// handle case where we need to get initial value from first result
 		if (!hasAccumulator) {
-			if (currentResult.done) {
-				throw new TypeError('Reduce of empty iterable with no initial value');
-			}
-
 			const firstValue = currentResult.value;
 			accumulator = firstValue as unknown as U;
 			index = 1;
@@ -1009,6 +1019,7 @@ export class ExtendedIterable<T> {
 			currentResult = await iterator.next();
 		}
 
+		await iterator.return?.();
 		return accumulator;
 	}
 
