@@ -46,17 +46,54 @@ export async function* emptyAsyncGenerator() {
  *
  * @returns The iterable object.
  */
-export function createIterableObject(): Iterator<number> & {
+export function createIterableObject({
+	count = 4,
+	partial = false,
+	throwOnValue = -1
+}: {
+	count?: number;
+	partial?: boolean;
+	throwOnValue?: number;
+} = {}): Iterator<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
 } {
+	if (partial) {
+		return {
+			index: 1,
+			returned: 0,
+			thrown: 0,
+			next() {
+				if (this.index === throwOnValue) {
+					throw new Error('test');
+				}
+
+				if (this.index > count) {
+					return {
+						done: true,
+						value: undefined
+					};
+				}
+
+				return {
+					done: false,
+					value: this.index++
+				};
+			}
+		};
+	}
+
 	return {
 		index: 1,
 		returned: 0,
 		thrown: 0,
 		next() {
-			if (this.index > 4) {
+			if (this.index === throwOnValue) {
+				throw new Error('test');
+			}
+
+			if (this.index > count) {
 				return {
 					done: true,
 					value: undefined
@@ -68,9 +105,9 @@ export function createIterableObject(): Iterator<number> & {
 				value: this.index++
 			};
 		},
-		return() {
+		return(value) {
 			this.returned++;
-			return { done: true, value: undefined };
+			return { done: true, value };
 		},
 		throw(err) {
 			this.thrown++;
@@ -93,51 +130,20 @@ export function createEmptyIterableObject(): Iterator<number> {
 }
 
 /**
- * Creates an iterable object that throws an error.
- *
- * @returns The iterable object.
- */
-export function createIterableObjectNextThrows(throwOnValue = 1): Iterator<number> & {
-	index: number;
-	returned: number;
-	thrown: number;
-} {
-	return {
-		index: 1,
-		returned: 0,
-		thrown: 0,
-		next() {
-			if (this.index === throwOnValue) {
-				throw new Error('test');
-			}
-
-			return {
-				done: false,
-				value: this.index++
-			};
-		},
-		return() {
-			this.returned++;
-			return { done: true, value: undefined };
-		},
-		throw(err) {
-			this.thrown++;
-			throw err;
-		}
-	};
-}
-
-/**
  * Creates an async iterable object that produces the numbers 1, 2, 3, 4.
  *
  * @returns The iterable object.
  */
-export function createPartialAsyncIterableObject(): AsyncIterator<number> & {
+export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterator<number> & {
 	index: number;
 } {
 	return {
 		index: 1,
 		async next() {
+			if (this.index === throwOnValue) {
+				throw new Error('test');
+			}
+
 			if (this.index > 4) {
 				return {
 					done: true,
@@ -180,9 +186,9 @@ export function createAsyncIterableObject(): AsyncIterator<number> & {
 				value: this.index++
 			};
 		},
-		async return() {
+		async return(value) {
 			this.returned++;
-			return { done: true, value: undefined };
+			return { done: true, value };
 		},
 		async throw(err) {
 			this.thrown++;
@@ -215,9 +221,9 @@ export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIter
 				value: this.index++
 			};
 		},
-		async return() {
+		async return(value) {
 			this.returned++;
-			return { done: true, value: undefined };
+			return { done: true, value };
 		},
 		async throw(err) {
 			this.thrown++;
@@ -227,34 +233,11 @@ export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIter
 }
 
 /**
- * Creates an async iterable object that throws an error.
- *
- * @returns The async iterable object.
- */
-export function createPartialAsyncIterableObjectNextThrows(): AsyncIterator<number> & {
-	index: number;
-} {
-	return {
-		index: 1,
-		async next() {
-			if (this.index > 1) {
-				throw new Error('test');
-			}
-
-			return {
-				done: false,
-				value: this.index++
-			};
-		}
-	};
-}
-
-/**
  * Creates an iterable object that produces the numbers 1, 2, 3, 4.
  *
  * @returns The iterable object.
  */
-export function createMixedAsyncIterableObject(): (Iterator<number> | AsyncIterator<number>) & {
+export function createMixedAsyncIterableObject(throwOnValue = -1): (Iterator<number> | AsyncIterator<number>) & {
 	index: number;
 	returned: number;
 	thrown: number;
@@ -272,20 +255,26 @@ export function createMixedAsyncIterableObject(): (Iterator<number> | AsyncItera
 			}
 
 			if (this.index % 2 === 1) {
+				if (this.index === throwOnValue) {
+					throw new Error('test');
+				}
 				return {
 					done: false,
 					value: this.index++
 				};
 			}
 
+			if (this.index === throwOnValue) {
+				return Promise.reject(new Error('test'));
+			}
 			return Promise.resolve({
 				done: false,
 				value: this.index++
 			});
 		},
-		return() {
+		return(value) {
 			this.returned++;
-			return { done: true, value: undefined };
+			return { done: true, value };
 		},
 		throw(err) {
 			this.thrown++;
@@ -313,7 +302,7 @@ export function assertReturnedThrown(data: any, returned: number, thrown: number
 /**
  * The matrix of test data.
  */
-export const testMatrix: Record<string, {
+export const dataMatrix: Record<string, {
 	asyncData?: () => any;
 	asyncEmptyData?: () => any;
 	asyncMixedData?: () => (Iterator<number> | AsyncIterator<number>) & {
@@ -321,44 +310,52 @@ export const testMatrix: Record<string, {
 		returned: number;
 		thrown: number;
 	};
+	asyncMixedThrows?: (throwOnValue?: number) => (Iterator<number> | AsyncIterator<number>) & {
+		index: number;
+		returned: number;
+		thrown: number;
+	};
 	asyncNextThrows?: (throwOnValue?: number) => any;
 	asyncPartialData?: () => any;
-	asyncPartialNextThrows?: () => any;
+	asyncPartialNextThrows?: (throwOnValue?: number) => any;
 	syncData?: () => any;
 	syncEmptyData?: () => any;
 	syncNextThrows?: (throwOnValue?: number) => any;
+	syncPartialData?: () => any;
 }> = {
-	'array': {
-		syncData: () => [1, 2, 3, 4],
-		syncEmptyData: () => []
-	},
-	'iterable': {
-		syncData: () => new Set([1, 2, 3, 4]),
-		syncEmptyData: () => new Set()
-	},
+	// 'array': {
+	// 	syncData: () => [1, 2, 3, 4],
+	// 	syncEmptyData: () => []
+	// },
+	// 'iterable': {
+	// 	syncData: () => new Set([1, 2, 3, 4]),
+	// 	syncEmptyData: () => new Set()
+	// },
 	'iterable object': {
 		asyncData: () => createAsyncIterableObject(),
 		asyncEmptyData: () => createEmptyIterableObject(),
 		asyncMixedData: () => createMixedAsyncIterableObject(),
+		asyncMixedThrows: (throwOnValue = 1) => createMixedAsyncIterableObject(throwOnValue),
 		asyncNextThrows: (throwOnValue = 1) => createAsyncIterableObjectNextThrows(throwOnValue),
 		asyncPartialData: () => createPartialAsyncIterableObject(),
-		asyncPartialNextThrows: () => createPartialAsyncIterableObjectNextThrows(),
-		syncNextThrows: (throwOnValue = 1) => createIterableObjectNextThrows(throwOnValue),
+		asyncPartialNextThrows: (throwOnValue = 1) => createPartialAsyncIterableObject(throwOnValue),
 		syncData: () => createIterableObject(),
-		syncEmptyData: () => createEmptyIterableObject(),
+		syncEmptyData: () => createIterableObject({ count: 0 }),
+		syncNextThrows: (throwOnValue = 1) => createIterableObject({ throwOnValue }),
+		syncPartialData: () => createIterableObject({ partial: true })
 	},
-	'generator function': {
-		asyncData: () => simpleAsyncGenerator,
-		asyncEmptyData: () => emptyAsyncGenerator,
-		syncData: () => simpleGenerator,
-		syncEmptyData: () => emptyGenerator,
-	}
+	// 'generator function': {
+	// 	asyncData: () => simpleAsyncGenerator,
+	// 	asyncEmptyData: () => emptyAsyncGenerator,
+	// 	syncData: () => simpleGenerator,
+	// 	syncEmptyData: () => emptyGenerator,
+	// }
 };
 
-export function hasSyncTests(testData: any) {
-	return testData.syncData || testData.syncEmptyData || testData.syncNextThrows;
+export function hasSyncTestData(testData: any) {
+	return testData.syncData || testData.syncEmptyData || testData.syncNextThrows || testData.syncPartialData;
 }
 
 export function hasAsyncTestData(testData: any) {
-	return testData.asyncData || testData.asyncEmptyData || testData.asyncMixedData || testData.asyncNextThrows || testData.asyncPartialData || testData.asyncPartialNextThrows;
+	return testData.asyncData || testData.asyncEmptyData || testData.asyncMixedData || testData.asyncMixedThrows || testData.asyncNextThrows || testData.asyncPartialData || testData.asyncPartialNextThrows;
 }
