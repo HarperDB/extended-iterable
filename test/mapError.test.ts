@@ -3,7 +3,35 @@ import { ExtendedIterable } from '../src/extended-iterable.js';
 import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
 describe('.mapError()', () => {
-	// describe('array', () => {
+	for (const [name, testData] of Object.entries(dataMatrix)) {
+		if (hasSyncTestData(testData)) {
+			describe(`${name} sync`, () => {
+				if (testData.syncData) {
+					it('should return a mapped iterable with an error', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const mapErrorIter = iter.map(item => {
+							if (item === 2) {
+								throw new Error('error');
+							}
+							return item * 2;
+						}).mapError(error => error)[Symbol.iterator]();
+						expect(mapErrorIter.next()).toEqual({ value: 2, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: new Error('error'), done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
+						// assertReturnedThrown(data, 0, 0);
+					});
+				}
+			});
+		}
+
+		if (hasAsyncTestData(testData)) {
+			//
+		}
+	}
+
 	// 	it('should return a mapped iterable with an error', () => {
 	// 		const iter = new ExtendedIterable([1, 2, 3]);
 	// 		expect(iter
