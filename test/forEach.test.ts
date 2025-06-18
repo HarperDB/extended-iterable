@@ -13,7 +13,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						iter.forEach(item => result.push(item));
 						expect(result).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate an error from the callback', () => {
@@ -30,7 +30,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						await iter.forEach(async item => result.push(item));
 						expect(result).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate an error from the async callback', async () => {
@@ -57,7 +57,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						iter.forEach(item => result.push(item));
 						expect(result).toEqual([]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -96,7 +96,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						await iter.forEach(item => result.push(item));
 						expect(result).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate an error from the callback', async () => {
@@ -114,7 +114,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						await iter.forEach(async item => result.push(item));
 						expect(result).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate an error from the async callback', async () => {
@@ -134,7 +134,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						await iter.forEach(item => result.push(item));
 						expect(result).toEqual([]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -145,7 +145,7 @@ describe('.forEach()', () => {
 						const result: number[] = [];
 						await iter.forEach(item => result.push(item));
 						expect(result).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

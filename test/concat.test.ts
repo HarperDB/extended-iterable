@@ -18,7 +18,7 @@ describe('.concat()', () => {
 						expect(concatIter.next()).toEqual({ value: 5, done: false });
 						expect(concatIter.next()).toEqual({ value: 6, done: false });
 						expect(concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should error if value to concatenate is not iterable', () => {
@@ -39,7 +39,7 @@ describe('.concat()', () => {
 						expect(concatIter.next()).toEqual({ value: 5, done: false });
 						expect(concatIter.next()).toEqual({ value: 6, done: false });
 						expect(concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -51,7 +51,7 @@ describe('.concat()', () => {
 						expect(concatIter.next()).toEqual({ value: 5, done: false });
 						expect(concatIter.next()).toEqual({ value: 6, done: false });
 						expect(concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should concatenate an empty iterable and an empty array', () => {
@@ -59,7 +59,7 @@ describe('.concat()', () => {
 						const iter = new ExtendedIterable(data);
 						const concatIter = iter.concat([])[Symbol.iterator]();
 						expect(concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -98,7 +98,7 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 5, done: false });
 						expect(await concatIter.next()).toEqual({ value: 6, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should concatenate an async iterable with another async iterable', async () => {
@@ -114,7 +114,7 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 3, done: false });
 						expect(await concatIter.next()).toEqual({ value: 4, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -126,7 +126,7 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 5, done: false });
 						expect(await concatIter.next()).toEqual({ value: 6, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -142,7 +142,7 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 5, done: false });
 						expect(await concatIter.next()).toEqual({ value: 6, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -177,7 +177,7 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 5, done: false });
 						expect(await concatIter.next()).toEqual({ value: 6, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

@@ -18,7 +18,7 @@ describe('.at()', () => {
 						const data = testData.syncData!();
 						const iterator = new ExtendedIterable(data);
 						expect(iterator.at(10)).toBeUndefined;
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should throw an error if the index is not a number', () => {
@@ -41,7 +41,7 @@ describe('.at()', () => {
 						const data = testData.syncEmptyData!();
 						const iterator = new ExtendedIterable(data);
 						expect(iterator.at(10)).toBeUndefined;
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -85,7 +85,7 @@ describe('.at()', () => {
 						const data = testData.asyncData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.at(10)).toBeUndefined;
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -94,7 +94,7 @@ describe('.at()', () => {
 						const data = testData.asyncEmptyData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.at(10)).toBeUndefined;
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -112,6 +112,7 @@ describe('.at()', () => {
 						const data = testData.asyncNextThrows!();
 						const iterator = new ExtendedIterable(data);
 						await expect(iterator.at(2)).rejects.toThrow('test');
+						assertReturnedThrown(data, 0, 1);
 					});
 				}
 
@@ -127,7 +128,7 @@ describe('.at()', () => {
 						const data = testData.asyncPartialData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.at(10)).toBeUndefined;
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

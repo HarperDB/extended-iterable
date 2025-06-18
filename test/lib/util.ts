@@ -54,7 +54,7 @@ export function createIterableObject({
 	count?: number;
 	partial?: boolean;
 	throwOnValue?: number;
-} = {}): Iterator<number> & {
+} = {}): Iterator<number> & Iterable<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
@@ -64,6 +64,9 @@ export function createIterableObject({
 			index: 1,
 			returned: 0,
 			thrown: 0,
+			[Symbol.iterator]() {
+				return this;
+			},
 			next() {
 				if (this.index === throwOnValue) {
 					throw new Error('test');
@@ -88,6 +91,9 @@ export function createIterableObject({
 		index: 1,
 		returned: 0,
 		thrown: 0,
+		[Symbol.iterator]() {
+			return this;
+		},
 		next() {
 			if (this.index === throwOnValue) {
 				throw new Error('test');
@@ -121,8 +127,11 @@ export function createIterableObject({
  *
  * @returns The empty iterable object.
  */
-export function createEmptyIterableObject(): Iterator<number> {
+export function createEmptyIterableObject(): Iterator<number> & Iterable<number> {
 	return {
+		[Symbol.iterator]() {
+			return this;
+		},
 		next() {
 			return { done: true, value: undefined };
 		}
@@ -134,11 +143,14 @@ export function createEmptyIterableObject(): Iterator<number> {
  *
  * @returns The iterable object.
  */
-export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterator<number> & {
+export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterator<number> & AsyncIterable<number> & {
 	index: number;
 } {
 	return {
 		index: 1,
+		[Symbol.asyncIterator]() {
+			return this;
+		},
 		async next() {
 			if (this.index === throwOnValue) {
 				throw new Error('test');
@@ -164,7 +176,7 @@ export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterat
  *
  * @returns The iterable object.
  */
-export function createAsyncIterableObject(): AsyncIterator<number> & {
+export function createAsyncIterableObject(): AsyncIterator<number> & AsyncIterable<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
@@ -173,6 +185,9 @@ export function createAsyncIterableObject(): AsyncIterator<number> & {
 		index: 1,
 		returned: 0,
 		thrown: 0,
+		[Symbol.asyncIterator]() {
+			return this;
+		},
 		async next() {
 			if (this.index > 4) {
 				return {
@@ -202,7 +217,7 @@ export function createAsyncIterableObject(): AsyncIterator<number> & {
  *
  * @returns The async iterable object.
  */
-export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIterator<number> & {
+export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIterator<number> & AsyncIterable<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
@@ -211,6 +226,9 @@ export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIter
 		index: 1,
 		returned: 0,
 		thrown: 0,
+		[Symbol.asyncIterator]() {
+			return this;
+		},
 		async next() {
 			if (this.index === throwOnValue) {
 				throw new Error('test');
@@ -237,15 +255,18 @@ export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIter
  *
  * @returns The iterable object.
  */
-export function createMixedAsyncIterableObject(throwOnValue = -1): (Iterator<number> | AsyncIterator<number>) & {
+export function createMixedAsyncIterableObject(throwOnValue = -1): (Iterator<number> & Iterable<number> & {
 	index: number;
 	returned: number;
 	thrown: number;
-} {
+}) {
 	return {
 		index: 1,
 		returned: 0,
 		thrown: 0,
+		[Symbol.iterator]() {
+			return this;
+		},
 		next(): IteratorResult<number> | Promise<IteratorResult<number>> | any {
 			if (this.index > 4) {
 				return Promise.resolve({
@@ -349,7 +370,7 @@ export const dataMatrix: Record<string, {
 	// 'iterable': {
 	// 	syncData: () => new Set([1, 2, 3, 4]),
 	// 	syncEmptyData: () => new Set()
-	// },
+	// }
 };
 
 export function hasSyncTestData(testData: any) {

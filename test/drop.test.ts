@@ -14,7 +14,7 @@ describe('.drop()', () => {
 						expect(dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if the count is greater than the length of the array', () => {
@@ -22,7 +22,7 @@ describe('.drop()', () => {
 						const iter = new ExtendedIterable(data);
 						const dropIter = iter.drop(5)[Symbol.iterator]();
 						expect(dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return entire iterable if skip count is 0', () => {
@@ -34,7 +34,7 @@ describe('.drop()', () => {
 						expect(dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should throw an error if the count is not a number', () => {
@@ -58,7 +58,7 @@ describe('.drop()', () => {
 						const iter = new ExtendedIterable(data);
 						const dropIter = iter.drop(2)[Symbol.iterator]();
 						expect(dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -92,7 +92,7 @@ describe('.drop()', () => {
 						expect(await dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(await dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if the count is greater than the length of the array', async () => {
@@ -100,7 +100,7 @@ describe('.drop()', () => {
 						const iter = new ExtendedIterable(data);
 						const dropIter = iter.drop(5)[Symbol.asyncIterator]();
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return entire iterable if skip count is 0', async () => {
@@ -112,7 +112,7 @@ describe('.drop()', () => {
 						expect(await dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(await dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -122,7 +122,7 @@ describe('.drop()', () => {
 						const iter = new ExtendedIterable(data);
 						const dropIter = iter.drop(2)[Symbol.asyncIterator]();
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -134,7 +134,7 @@ describe('.drop()', () => {
 						expect(await dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(await dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -175,7 +175,7 @@ describe('.drop()', () => {
 						expect(await dropIter.next()).toEqual({ done: false, value: 3 });
 						expect(await dropIter.next()).toEqual({ done: false, value: 4 });
 						expect(await dropIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

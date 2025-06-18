@@ -6,6 +6,7 @@ import { TakeIterator } from './iterators/take-iterator.js';
 import { resolveIterator } from './iterators/resolve-iterator.js';
 import { SliceIterator } from './iterators/slice-iterator.js';
 import type { IterableLike } from './types.js';
+import { MapIterator } from './iterators/map-iterator.js';
 
 /**
  * An iterable that provides a rich set of methods for working with ranges of
@@ -102,9 +103,6 @@ export class ExtendedIterable<T> {
 			}
 		}
 
-		if (iterator.return) {
-			return (iterator.return(array) as IteratorResult<T>).value;
-		}
 		return array;
 	}
 
@@ -126,7 +124,6 @@ export class ExtendedIterable<T> {
 				result = await iterator.next();
 			}
 
-			iterator.return?.(array);
 			return array;
 		} catch (err) {
 			if (iterator.throw) {
@@ -205,9 +202,6 @@ export class ExtendedIterable<T> {
 			}
 		}
 
-		if (iterator.return) {
-			return (iterator.return(result.value) as IteratorReturnResult<T>).value;
-		}
 		return result.value;
 	}
 
@@ -229,11 +223,6 @@ export class ExtendedIterable<T> {
 			currentIndex++;
 			currentResult = await iterator.next();
 		}
-
-		if (iterator.return) {
-			return (await iterator.return(currentResult.value)).value;
-		}
-		return undefined;
 	}
 
 	/**
@@ -341,7 +330,6 @@ export class ExtendedIterable<T> {
 			return handleError(err);
 		}
 
-		iterator.return?.();
 		return true;
 	}
 
@@ -382,8 +370,6 @@ export class ExtendedIterable<T> {
 			currentResult = await iterator.next();
 		}
 
-		// All items passed - call return() before completing
-		iterator.return?.();
 		return true;
 	}
 
@@ -477,8 +463,6 @@ export class ExtendedIterable<T> {
 		} catch (err) {
 			return handleError(err);
 		}
-
-		iterator.return?.();
 	}
 
 	async #asyncFind(
@@ -499,8 +483,6 @@ export class ExtendedIterable<T> {
 
 			currentResult = await iterator.next();
 		}
-
-		iterator.return?.();
 	}
 
 	/**
@@ -656,8 +638,6 @@ export class ExtendedIterable<T> {
 		} catch (err) {
 			return handleError(err);
 		}
-
-		iterator.return?.();
 	}
 
 	/**
@@ -681,11 +661,6 @@ export class ExtendedIterable<T> {
 			}
 			currentResult = await iterator.next();
 		}
-
-		const returnResult = iterator.return?.();
-		if (returnResult instanceof Promise) {
-			return returnResult.then(() => undefined);
-		}
 	}
 
 	/**
@@ -701,82 +676,10 @@ export class ExtendedIterable<T> {
 	 * ```
 	 */
 	map<U>(callback: (value: T, index: number) => U | Promise<U>): ExtendedIterable<U> {
-		if (typeof callback !== 'function') {
-			throw new TypeError('Callback is not a function');
-		}
-
 		return new ExtendedIterable(
-			new ExtendedIterable.MapIterator(this.#iterator, callback)
+			new MapIterator(this.#iterator, callback)
 		);
 	}
-
-	static MapIterator = class MapIterator<T, U> extends BaseIterator<T> {
-		#index = 0;
-		#callback: (value: T, index: number) => U | Promise<U>;
-
-		constructor(
-			iterator: Iterator<T> | AsyncIterator<T>,
-			callback: (value: T, index: number) => U | Promise<U>
-		) {
-			super(iterator);
-			this.#callback = callback;
-		}
-
-		next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
-			const result = super.next();
-
-			// async handling
-			if (result instanceof Promise) {
-				return this.#asyncMap(result);
-			}
-
-			// sync handling
-			if (result.done) {
-				return result;
-			}
-
-			try {
-				const value = this.#callback(result.value, this.#index++);
-				if (value instanceof Promise) {
-					return value.then(value => ({
-						done: false,
-						value
-					}));
-				}
-				return {
-					done: false,
-					value
-				};
-			} catch (err) {
-				this.iterator.throw?.(err);
-				throw err;
-			}
-		}
-
-		async #asyncMap(result: Promise<IteratorResult<T>>): Promise<IteratorResult<U>> {
-			const currentResult = await result;
-			if (currentResult.done) {
-				return currentResult as IteratorResult<U>;
-			}
-
-			try {
-				const value = this.#callback(currentResult.value, this.#index++);
-				if (value instanceof Promise) {
-					return value.then(value => ({
-						done: false,
-						value
-					}));
-				}
-				return {
-					done: false,
-					value
-				};
-			} catch (err) {
-				this.iterator.throw?.(err);
-				throw err;
-			}
-		}
-	};
 
 	/**
 	 * Catch errors thrown during iteration and allow iteration to continue.
@@ -914,8 +817,6 @@ export class ExtendedIterable<T> {
 			throw err;
 		};
 
-		debugger;
-
 		try {
 			if (typeof callback !== 'function') {
 				throw new TypeError('Callback is not a function');
@@ -977,7 +878,6 @@ export class ExtendedIterable<T> {
 			return handleError(err);
 		}
 
-		iterator.return?.();
 		return accumulator;
 	}
 
@@ -1019,7 +919,6 @@ export class ExtendedIterable<T> {
 			currentResult = await iterator.next();
 		}
 
-		await iterator.return?.();
 		return accumulator;
 	}
 
@@ -1097,7 +996,6 @@ export class ExtendedIterable<T> {
 				}
 
 				if (rval) {
-					// Early termination - call return() before exiting
 					iterator.return?.();
 					return true;
 				}
@@ -1114,7 +1012,6 @@ export class ExtendedIterable<T> {
 			return handleError(err);
 		}
 
-		iterator.return?.();
 		return false;
 	}
 
@@ -1141,7 +1038,6 @@ export class ExtendedIterable<T> {
 			if (rval instanceof Promise) {
 				return rval.then(rval => {
 					if (rval) {
-						// Early termination - call return() before exiting
 						iterator.return?.();
 						return true;
 					}
@@ -1150,7 +1046,6 @@ export class ExtendedIterable<T> {
 			}
 
 			if (rval) {
-				// Early termination - call return() before exiting
 				iterator.return?.();
 				return true;
 			}
@@ -1158,8 +1053,6 @@ export class ExtendedIterable<T> {
 			currentResult = await iterator.next();
 		}
 
-		// Iterator exhausted naturally - call return() before completing
-		iterator.return?.();
 		return false;
 	}
 

@@ -18,7 +18,7 @@ describe('.some()', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', () => {
@@ -41,7 +41,7 @@ describe('.some()', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item > 4)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in async callback function', async () => {
@@ -66,7 +66,7 @@ describe('.some()', () => {
 						const data = testData.syncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.some(item => item < 5)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -102,7 +102,7 @@ describe('.some()', () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', async () => {
@@ -125,7 +125,7 @@ describe('.some()', () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(async item => item > 4)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in async callback function', async () => {
@@ -143,7 +143,7 @@ describe('.some()', () => {
 						const data = testData.asyncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item < 5)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -159,7 +159,7 @@ describe('.some()', () => {
 						const data = testData.asyncMixedData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.some(item => item > 4)).toBe(false);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

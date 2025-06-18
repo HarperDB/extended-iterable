@@ -11,7 +11,7 @@ describe('.asArray', () => {
 						const data = testData.syncData!();
 						const iterator = new ExtendedIterable(data);
 						expect(iterator.asArray).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -20,7 +20,7 @@ describe('.asArray', () => {
 						const data = testData.syncEmptyData!();
 						const iterator = new ExtendedIterable(data);
 						expect(iterator.asArray).toEqual([]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -49,7 +49,7 @@ describe('.asArray', () => {
 						const data = testData.asyncData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.asArray).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -58,7 +58,7 @@ describe('.asArray', () => {
 						const data = testData.asyncEmptyData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.asArray).toEqual([]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -67,7 +67,7 @@ describe('.asArray', () => {
 						const data = testData.asyncMixedData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.asArray).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -84,7 +84,7 @@ describe('.asArray', () => {
 						const data = testData.asyncPartialData!();
 						const iterator = new ExtendedIterable(data);
 						expect(await iterator.asArray).toEqual([1, 2, 3, 4]);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

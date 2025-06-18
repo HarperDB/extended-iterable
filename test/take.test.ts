@@ -34,7 +34,7 @@ describe('.take()', () => {
 						expect(takeIter.next()).toEqual({ done: false, value: 3 });
 						expect(takeIter.next()).toEqual({ done: false, value: 4 });
 						expect(takeIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should throw an error if the limit is not a number', () => {
@@ -58,7 +58,7 @@ describe('.take()', () => {
 						const iter = new ExtendedIterable(data);
 						const takeIter = iter.take(2)[Symbol.iterator]();
 						expect(takeIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -113,7 +113,7 @@ describe('.take()', () => {
 						expect(await takeIter.next()).toEqual({ done: false, value: 3 });
 						expect(await takeIter.next()).toEqual({ done: false, value: 4 });
 						expect(await takeIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -123,7 +123,7 @@ describe('.take()', () => {
 						const iter = new ExtendedIterable(data);
 						const takeIter = iter.take(2)[Symbol.asyncIterator]();
 						expect(await takeIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -189,7 +189,7 @@ describe('.take()', () => {
 						expect(await takeIter.next()).toEqual({ done: false, value: 3 });
 						expect(await takeIter.next()).toEqual({ done: false, value: 4 });
 						expect(await takeIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

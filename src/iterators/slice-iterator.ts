@@ -68,7 +68,7 @@ export class SliceIterator<T> extends BaseIterator<T> {
 			}
 
 			if (result.done) {
-				return super.return();
+				return result;
 			}
 			this.#index++;
 		}
@@ -89,8 +89,11 @@ export class SliceIterator<T> extends BaseIterator<T> {
 		this.#yielding = true;
 
 		// if iterator is done or we've reached the end index, return done
-		if (currentResult.done || (this.#endIndex !== undefined && this.#index >= this.#endIndex)) {
-			return super.return(currentResult.value);
+		if (currentResult.done) {
+			return currentResult;
+		}
+		if (this.#endIndex !== undefined && this.#index >= this.#endIndex) {
+			return super.return();
 		}
 
 		// process the current result
@@ -113,7 +116,7 @@ export class SliceIterator<T> extends BaseIterator<T> {
 			// async path
 			return result.then(currentValue => {
 				if (currentValue.done) {
-					return super.return(currentValue.value);
+					return currentValue;
 				}
 				this.#index++;
 				return {
@@ -125,7 +128,7 @@ export class SliceIterator<T> extends BaseIterator<T> {
 
 		// sync path
 		if (result.done) {
-			return super.return(result.value);
+			return result;
 		}
 		this.#index++;
 		return {

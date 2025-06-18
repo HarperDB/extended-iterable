@@ -16,7 +16,7 @@ describe('.slice()', () => {
 						expect(sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an iterable with start, no end', () => {
@@ -26,7 +26,7 @@ describe('.slice()', () => {
 						expect(sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an iterable with both start and end', () => {
@@ -43,7 +43,7 @@ describe('.slice()', () => {
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice(5)[Symbol.iterator]();
 						expect(sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if start is greater than the end', () => {
@@ -89,7 +89,7 @@ describe('.slice()', () => {
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice()[Symbol.iterator]();
 						expect(sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -125,7 +125,7 @@ describe('.slice()', () => {
 						expect(await sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(await sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an iterable with start, no end', async () => {
@@ -135,7 +135,7 @@ describe('.slice()', () => {
 						expect(await sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(await sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an iterable with both start and end', async () => {
@@ -152,7 +152,7 @@ describe('.slice()', () => {
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice(5)[Symbol.asyncIterator]();
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if start is greater than the end', async () => {
@@ -170,7 +170,7 @@ describe('.slice()', () => {
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice()[Symbol.asyncIterator]();
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -183,7 +183,7 @@ describe('.slice()', () => {
 						expect(await sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(await sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -205,7 +205,7 @@ describe('.slice()', () => {
 						expect(await sliceIter.next()).toEqual({ done: false, value: 3 });
 						expect(await sliceIter.next()).toEqual({ done: false, value: 4 });
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

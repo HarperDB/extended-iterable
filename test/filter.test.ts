@@ -14,7 +14,7 @@ describe('.filter()', () => {
 						expect(filterIter.next()).toEqual({ done: false, value: 1 });
 						expect(filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if the callback returns false for all items', () => {
@@ -22,7 +22,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(item => item < 0)[Symbol.iterator]();
 						expect(filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', () => {
@@ -42,7 +42,7 @@ describe('.filter()', () => {
 						expect(await filterIter.next()).toEqual({ done: false, value: 1 });
 						expect(await filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty iterable if the callback returns false for all items with async callback', async () => {
@@ -50,7 +50,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(async item => item < 0)[Symbol.iterator]();
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function with async callback', async () => {
@@ -78,7 +78,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(item => item < 0)[Symbol.iterator]();
 						expect(filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -113,7 +113,7 @@ describe('.filter()', () => {
 						expect(await filterIter.next()).toEqual({ done: false, value: 1 });
 						expect(await filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty async iterable if the callback returns false for all items', async () => {
@@ -121,7 +121,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(item => item < 0)[Symbol.iterator]();
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', async () => {
@@ -141,7 +141,7 @@ describe('.filter()', () => {
 						expect(await filterIter.next()).toEqual({ done: false, value: 1 });
 						expect(await filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty async iterable if the callback returns false for all items with async callback', async () => {
@@ -149,7 +149,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(async item => item < 0)[Symbol.iterator]();
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function with async callback', async () => {
@@ -171,7 +171,7 @@ describe('.filter()', () => {
 						expect(await filterIter.next()).toEqual({ done: false, value: 1 });
 						expect(await filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a filtered async iterable skipping first item with mixed async and sync values', async () => {
@@ -180,7 +180,7 @@ describe('.filter()', () => {
 						const filterIter = iter.filter(async item => item > 1 && item < 3)[Symbol.iterator]();
 						expect(await filterIter.next()).toEqual({ done: false, value: 2 });
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return an empty async iterable if the callback returns false for all items with mixed async and sync values', async () => {
@@ -188,7 +188,7 @@ describe('.filter()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						const filterIter = iter.filter(async item => item < 0)[Symbol.iterator]();
 						expect(await filterIter.next()).toEqual({ done: true, value: undefined });
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

@@ -11,14 +11,14 @@ describe('.reduce()', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.reduce((acc, item) => acc + item, 0)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should reduce the iterable to a single value without an initial value', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.reduce((acc, item) => acc ? acc + item : item)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', () => {
@@ -34,14 +34,14 @@ describe('.reduce()', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce(async (acc, item) => acc + item, 0)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should reduce the iterable to a single value without an initial value and async callback', async () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce(async (acc, item) => acc ? acc + item : item)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in async callback function', async () => {
@@ -68,13 +68,29 @@ describe('.reduce()', () => {
 						const data = testData.syncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(iter.reduce((acc, item) => acc + item, 0)).toBe(0);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should throw an error if empty iterable and no initial value', () => {
 						const data = testData.syncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.reduce((acc, item) => acc ? acc + item : item)).toThrowError(new TypeError('Reduce of empty iterable with no initial value'));
+						assertReturnedThrown(data, 0, 1);
+					});
+				}
+
+				if (testData.syncNextThrows) {
+					it('should throw an error if the iterator next() throws an error', () => {
+						const data = testData.syncNextThrows!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.reduce((acc, item) => acc + item, 0)).toThrowError(new Error('test'));
+						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should throw an error if the iterator next() throws an error at a specific index', () => {
+						const data = testData.syncNextThrows!(2);
+						const iter = new ExtendedIterable<number>(data);
+						expect(() => iter.reduce((acc, item) => acc + item, 0)).toThrowError(new Error('test'));
 						assertReturnedThrown(data, 0, 1);
 					});
 				}
@@ -88,14 +104,14 @@ describe('.reduce()', () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce((acc, item) => acc + item, 0)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should reduce the iterable to a single value without an initial value', async () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce((acc, item) => acc ? acc + item : item)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should propagate error in callback function', async () => {
@@ -126,7 +142,7 @@ describe('.reduce()', () => {
 						const data = testData.asyncEmptyData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce((acc, item) => acc + item, 0)).toBe(0);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -135,7 +151,7 @@ describe('.reduce()', () => {
 						const data = testData.asyncMixedData!();
 						const iter = new ExtendedIterable<number>(data);
 						expect(await iter.reduce((acc, item) => acc + item, 0)).toBe(10);
-						assertReturnedThrown(data, 1, 0);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 

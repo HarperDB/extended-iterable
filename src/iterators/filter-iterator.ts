@@ -52,7 +52,7 @@ export class FilterIterator<T> extends BaseIterator<T> {
 				}
 			}
 
-			return super.return(result.value);
+			return result;
 		} catch (err) {
 			return super.throw(err);
 		}
@@ -69,6 +69,6 @@ export class FilterIterator<T> extends BaseIterator<T> {
 			currentResult = await super.next();
 		}
 
-		return super.return(currentResult.value);
+		return currentResult;
 	}
 }

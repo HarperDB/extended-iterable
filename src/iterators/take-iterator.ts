@@ -21,7 +21,7 @@ export class TakeIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-		if (this.#count >= this.#limit) {
+		if (this.#limit === 0 || this.#count >= this.#limit) {
 			return super.return();
 		}
 
@@ -41,7 +41,7 @@ export class TakeIterator<T> extends BaseIterator<T> {
 
 		// sync handling
 		if (result.done) {
-			return super.return(result.value);
+			return result;
 		}
 
 		this.#count++;
@@ -56,7 +56,7 @@ export class TakeIterator<T> extends BaseIterator<T> {
 		const currentResult = await result;
 
 		if (currentResult.done) {
-			return super.return(currentResult.value);
+			return currentResult;
 		}
 
 		this.#count++;

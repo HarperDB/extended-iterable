@@ -62,7 +62,7 @@ export class ConcatIterator<T> extends BaseIterator<T> {
 
 	#processResult(result: IteratorResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> {
 		if (result.done) {
-			return super.return(result.value);
+			return result;
 		}
 
 		return {

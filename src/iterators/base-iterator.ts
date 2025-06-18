@@ -14,7 +14,7 @@ export class BaseIterator<T> implements Iterator<T>, AsyncIterator<T> {
 
 	return(value?: T): IteratorResult<T> | Promise<IteratorResult<T>> | any {
 		if (this.iterator.return) {
-			return this.iterator.return(value);
+			this.iterator.return(value);
 		}
 		return { done: true, value };
 	}
