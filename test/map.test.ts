@@ -173,7 +173,7 @@ describe('.map()', () => {
 				}
 
 				if (testData.asyncPartialData) {
-					it('should loop over a partial iterable', async () => {
+					it('should iterate over a partial iterable', async () => {
 						const data = testData.asyncPartialData!();
 						const iter = new ExtendedIterable<number>(data);
 						const mapIter = iter.map(item => item * 2)[Symbol.iterator]();
