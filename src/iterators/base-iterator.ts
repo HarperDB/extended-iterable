@@ -32,7 +32,7 @@ export class BaseIterator<T> implements Iterator<T>, AsyncIterator<T> {
 	}
 
 	throw(err: unknown): IteratorResult<T> | Promise<IteratorResult<T>> | any {
-		if (this.iterator.throw) {
+		if (!this[KEEP_ALIVE] && !this.iterator[KEEP_ALIVE] && this.iterator.throw) {
 			return this.iterator.throw(err);
 		}
 		throw err;

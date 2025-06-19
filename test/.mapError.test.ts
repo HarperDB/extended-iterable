@@ -21,7 +21,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error with a callback returning a string', () => {
@@ -38,7 +38,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error with a callback returning undefined', () => {
@@ -55,7 +55,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error with an async callback', async () => {
@@ -72,7 +72,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error with an async callbacks', async () => {
@@ -89,7 +89,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error without a callback', () => {
@@ -106,7 +106,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable without an error and with a callback', () => {
@@ -160,7 +160,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped iterable with an error if the iterator next() throws an error at a specific index', () => {
@@ -172,7 +172,7 @@ describe('.mapError()', () => {
 						expect(mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 			});
@@ -195,7 +195,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped async iterable with an error with a callback returning a string', async () => {
@@ -212,7 +212,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped async iterable with an error with a callback returning undefined', async () => {
@@ -229,7 +229,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped async iterable with an error with an async callback', async () => {
@@ -246,7 +246,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped async iterable with an error without a callback', async () => {
@@ -263,7 +263,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 
 					it('should return a mapped async iterable without an error with a callback', async () => {
@@ -316,7 +316,7 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 1);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
@@ -335,7 +335,7 @@ describe('.mapError()', () => {
 						expect(await mapIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapIter.next()).toEqual({ value: 8, done: false });
 						expect(await mapIter.next()).toEqual({ value: undefined, done: true });
-						assertReturnedThrown(data, 0, 2);
+						assertReturnedThrown(data, 0, 0);
 					});
 				}
 
