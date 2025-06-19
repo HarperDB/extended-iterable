@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class TakeIterator<T> extends BaseIterator<T> {
 	#count = 0;
@@ -21,6 +21,10 @@ export class TakeIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		if (this.#limit === 0 || this.#count >= this.#limit) {
 			return super.return();
 		}

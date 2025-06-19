@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class DropIterator<T> extends BaseIterator<T> {
 	#count!: number;
@@ -22,6 +22,10 @@ export class DropIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		if (this.#doneSkipping) {
 			const result = super.next();
 			if (result instanceof Promise) {

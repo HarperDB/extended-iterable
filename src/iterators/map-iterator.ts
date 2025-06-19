@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class MapIterator<T, U> extends BaseIterator<T> {
 	#index = 0;
@@ -18,6 +18,10 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		try {
 			const result = super.next();
 
@@ -47,7 +51,7 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 				value
 			};
 		} catch (err) {
-			super.throw(err);
+			return super.throw(err);
 		}
 	}
 

@@ -7,7 +7,7 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 		iterator: Iterator<T> | AsyncIterator<T>,
 		catchCallback?: (error: Error | unknown) => Error | unknown | Promise<Error | unknown>
 	) {
-		super(iterator);
+		super(iterator, true);
 		if (catchCallback && typeof catchCallback !== 'function') {
 			super.throw(new TypeError('Callback is not a function'));
 		}
@@ -28,6 +28,11 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 				return result;
 			}
 
+			// rethrow errors to let the catch callback handle them
+			if (result.value instanceof Error) {
+				throw result.value;
+			}
+
 			return {
 				done: false,
 				value: result.value
@@ -45,7 +50,7 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 				}
 				return {
 					done: false,
-					value: err
+					value: err ?? error
 				};
 			}
 			return {
@@ -63,6 +68,11 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 				return currentResult as IteratorResult<T | Error>;
 			}
 
+			// rethrow errors to let the catch callback handle them
+			if (currentResult.value instanceof Error) {
+				throw currentResult.value;
+			}
+
 			return {
 				done: false,
 				value: currentResult.value
@@ -75,7 +85,7 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 				const resolvedErr = err instanceof Promise ? await err : err;
 				return {
 					done: false,
-					value: resolvedErr as any
+					value: resolvedErr ?? error
 				};
 			}
 			return {

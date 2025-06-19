@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
@@ -56,6 +56,17 @@ describe('.map()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.map('foo' as any)).toThrowError(new TypeError('Callback is not a function'));
 						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should end iterator on return()', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const mapIter = iter.map(item => item * 2)[Symbol.iterator]();
+						expect(mapIter.next()).toEqual({ value: 2, done: false });
+						assert(mapIter.return);
+						expect(mapIter.return()).toEqual({ value: undefined, done: true });
+						expect(mapIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -135,6 +146,17 @@ describe('.map()', () => {
 						})[Symbol.iterator]();
 						await expect(mapIter.next()).rejects.toThrowError(new Error('error'));
 						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should end async iterator on return()', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const mapIter = iter.map(item => item * 2)[Symbol.iterator]();
+						expect(await mapIter.next()).toEqual({ value: 2, done: false });
+						assert(mapIter.return);
+						expect(await mapIter.return()).toEqual({ value: undefined, done: true });
+						expect(await mapIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 

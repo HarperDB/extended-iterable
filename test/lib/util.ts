@@ -5,11 +5,39 @@ import { expect } from 'vitest';
  *
  * @returns The generator function.
  */
-export function* simpleGenerator() {
-	yield 1;
-	yield 2;
-	yield 3;
-	yield 4;
+export function* simpleGenerator(throwErrors = true) {
+	try {
+		yield 1;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 2;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 3;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 4;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
 }
 
 /**
@@ -25,11 +53,39 @@ export function* emptyGenerator() {
  *
  * @returns The async generator function.
  */
-export async function* simpleAsyncGenerator() {
-	yield 1;
-	yield 2;
-	yield 3;
-	yield 4;
+export async function* simpleAsyncGenerator(throwErrors = true) {
+	try {
+		yield 1;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 2;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 3;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
+	try {
+		yield 4;
+	} catch (err) {
+		if (throwErrors) {
+			throw err;
+		}
+		yield err;
+	}
 }
 
 /**
@@ -68,7 +124,9 @@ export function createIterableObject({
 				return this;
 			},
 			next() {
-				if (this.index === throwOnValue) {
+				const value = this.index++;
+
+				if (value === throwOnValue) {
 					throw new Error('test');
 				}
 
@@ -81,7 +139,7 @@ export function createIterableObject({
 
 				return {
 					done: false,
-					value: this.index++
+					value
 				};
 			}
 		};
@@ -95,11 +153,13 @@ export function createIterableObject({
 			return this;
 		},
 		next() {
-			if (this.index === throwOnValue) {
+			const value = this.index++;
+
+			if (value === throwOnValue) {
 				throw new Error('test');
 			}
 
-			if (this.index > count) {
+			if (value > count) {
 				return {
 					done: true,
 					value: undefined
@@ -108,7 +168,7 @@ export function createIterableObject({
 
 			return {
 				done: false,
-				value: this.index++
+				value
 			};
 		},
 		return(value) {
@@ -152,11 +212,13 @@ export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterat
 			return this;
 		},
 		async next() {
-			if (this.index === throwOnValue) {
+			const value = this.index++;
+
+			if (value === throwOnValue) {
 				throw new Error('test');
 			}
 
-			if (this.index > 4) {
+			if (value > 4) {
 				return {
 					done: true,
 					value: undefined
@@ -165,7 +227,7 @@ export function createPartialAsyncIterableObject(throwOnValue = -1): AsyncIterat
 
 			return {
 				done: false,
-				value: this.index++
+				value
 			};
 		}
 	};
@@ -230,13 +292,22 @@ export function createAsyncIterableObjectNextThrows(throwOnValue = 1): AsyncIter
 			return this;
 		},
 		async next() {
-			if (this.index === throwOnValue) {
+			const value = this.index++;
+
+			if (value === throwOnValue) {
 				throw new Error('test');
+			}
+
+			if (value > 4) {
+				return {
+					done: true,
+					value: undefined
+				};
 			}
 
 			return {
 				done: false,
-				value: this.index++
+				value
 			};
 		},
 		async return(value) {
@@ -268,29 +339,31 @@ export function createMixedAsyncIterableObject(throwOnValue = -1): (Iterator<num
 			return this;
 		},
 		next(): IteratorResult<number> | Promise<IteratorResult<number>> | any {
-			if (this.index > 4) {
+			const value = this.index++;
+
+			if (value > 4) {
 				return Promise.resolve({
 					done: true,
 					value: undefined
 				});
 			}
 
-			if (this.index % 2 === 1) {
-				if (this.index === throwOnValue) {
+			if (value % 2 === 1) {
+				if (value === throwOnValue) {
 					throw new Error('test');
 				}
 				return {
 					done: false,
-					value: this.index++
+					value
 				};
 			}
 
-			if (this.index === throwOnValue) {
+			if (value === throwOnValue) {
 				return Promise.reject(new Error('test'));
 			}
 			return Promise.resolve({
 				done: false,
-				value: this.index++
+				value
 			});
 		},
 		return(value) {
@@ -324,7 +397,7 @@ export function assertReturnedThrown(data: any, returned: number, thrown: number
  * The matrix of test data.
  */
 export const dataMatrix: Record<string, {
-	asyncData?: () => any;
+	asyncData?: (throwErrors?: boolean) => any;
 	asyncEmptyData?: () => any;
 	asyncMixedData?: () => (Iterator<number> | AsyncIterator<number>) & {
 		index: number;
@@ -339,7 +412,7 @@ export const dataMatrix: Record<string, {
 	asyncNextThrows?: (throwOnValue?: number) => any;
 	asyncPartialData?: () => any;
 	asyncPartialNextThrows?: (throwOnValue?: number) => any;
-	syncData?: () => any;
+	syncData?: (throwErrors?: boolean) => any;
 	syncEmptyData?: () => any;
 	syncNextThrows?: (throwOnValue?: number) => any;
 	syncPartialData?: () => any;
@@ -357,20 +430,20 @@ export const dataMatrix: Record<string, {
 		syncNextThrows: (throwOnValue = 1) => createIterableObject({ throwOnValue }),
 		syncPartialData: () => createIterableObject({ partial: true })
 	},
-	// 'array': {
-	// 	syncData: () => [1, 2, 3, 4],
-	// 	syncEmptyData: () => []
-	// },
-	// 'generator function': {
-	// 	asyncData: () => simpleAsyncGenerator,
-	// 	asyncEmptyData: () => emptyAsyncGenerator,
-	// 	syncData: () => simpleGenerator,
-	// 	syncEmptyData: () => emptyGenerator,
-	// },
-	// 'iterable': {
-	// 	syncData: () => new Set([1, 2, 3, 4]),
-	// 	syncEmptyData: () => new Set()
-	// }
+	'array': {
+		syncData: () => [1, 2, 3, 4],
+		syncEmptyData: () => []
+	},
+	'generator function': {
+		asyncData: (throwErrors = true) => simpleAsyncGenerator(throwErrors),
+		asyncEmptyData: () => emptyAsyncGenerator,
+		syncData: (throwErrors = true) => simpleGenerator(throwErrors),
+		syncEmptyData: () => emptyGenerator,
+	},
+	'iterable': {
+		syncData: () => new Set([1, 2, 3, 4]),
+		syncEmptyData: () => new Set()
+	}
 };
 
 export function hasSyncTestData(testData: any) {

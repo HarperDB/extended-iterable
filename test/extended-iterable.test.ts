@@ -19,10 +19,10 @@ describe('ExtendedIterable', () => {
 	});
 
 	it('should loop through the async iterator', async () => {
-		const iter = new ExtendedIterable(simpleAsyncGenerator);
+		const iter = new ExtendedIterable(simpleAsyncGenerator());
 		const result: number[] = [];
 		for await (const item of iter) {
-			result.push(item);
+			result.push(item as number);
 		}
 		expect(result).toEqual([1, 2, 3, 4]);
 	});

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
-import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
+import { assertReturnedThrown, createAsyncIterableObject, createIterableObject, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
 describe('.concat()', () => {
 	for (const [name, testData] of Object.entries(dataMatrix)) {
@@ -40,6 +40,28 @@ describe('.concat()', () => {
 						expect(concatIter.next()).toEqual({ value: 6, done: false });
 						expect(concatIter.next()).toEqual({ value: undefined, done: true });
 						assertReturnedThrown(data, 0, 0);
+					});
+
+					it('should end iterator on return()', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable(data);
+						const concatIter = iter.concat([5, 6])[Symbol.iterator]();
+						expect(concatIter.next()).toEqual({ value: 1, done: false });
+						assert(concatIter.return);
+						expect(concatIter.return()).toEqual({ value: undefined, done: true });
+						expect(concatIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
+					});
+
+					it('should end both iterators on return()', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable(data);
+						const concatIter = iter.concat(createIterableObject())[Symbol.iterator]();
+						expect(concatIter.next()).toEqual({ value: 1, done: false });
+						assert(concatIter.return);
+						expect(concatIter.return()).toEqual({ value: undefined, done: true });
+						expect(concatIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -115,6 +137,28 @@ describe('.concat()', () => {
 						expect(await concatIter.next()).toEqual({ value: 4, done: false });
 						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
 						assertReturnedThrown(data, 0, 0);
+					});
+
+					it('should end async iterator on return()', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable(data);
+						const concatIter = iter.concat([5, 6])[Symbol.iterator]();
+						expect(await concatIter.next()).toEqual({ value: 1, done: false });
+						assert(concatIter.return);
+						expect(await concatIter.return()).toEqual({ value: undefined, done: true });
+						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
+					});
+
+					it('should end both async iterators on return()', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable(data);
+						const concatIter = iter.concat(createAsyncIterableObject())[Symbol.asyncIterator]();
+						expect(await concatIter.next()).toEqual({ value: 1, done: false });
+						assert(concatIter.return);
+						expect(await concatIter.return()).toEqual({ value: undefined, done: true });
+						expect(await concatIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 

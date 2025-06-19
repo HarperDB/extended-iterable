@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
@@ -46,7 +46,7 @@ describe('.slice()', () => {
 						assertReturnedThrown(data, 0, 0);
 					});
 
-					it('should return an empty iterable if start is greater than the end', () => {
+					it('should return an empty iterable if start is greater than or equal to the end', () => {
 						const data = testData.syncData!();
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice(3, 2)[Symbol.iterator]();
@@ -80,6 +80,17 @@ describe('.slice()', () => {
 						const iter = new ExtendedIterable(data);
 						expect(() => iter.slice(2, -1)).toThrowError(new RangeError('End must be a positive number'));
 						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should end iterator on return()', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const sliceIter = iter.slice()[Symbol.iterator]();
+						expect(sliceIter.next()).toEqual({ done: false, value: 1 });
+						assert(sliceIter.return);
+						expect(sliceIter.return()).toEqual({ value: undefined, done: true });
+						expect(sliceIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -155,11 +166,22 @@ describe('.slice()', () => {
 						assertReturnedThrown(data, 0, 0);
 					});
 
-					it('should return an empty iterable if start is greater than the end', async () => {
+					it('should return an empty iterable if start is greater than or equal to the end', async () => {
 						const data = testData.asyncData!();
 						const iter = new ExtendedIterable(data);
 						const sliceIter = iter.slice(3, 2)[Symbol.asyncIterator]();
 						expect(await sliceIter.next()).toEqual({ done: true, value: undefined });
+						assertReturnedThrown(data, 1, 0);
+					});
+
+					it('should end async iterator on return()', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const sliceIter = iter.slice()[Symbol.asyncIterator]();
+						expect(await sliceIter.next()).toEqual({ done: false, value: 1 });
+						assert(sliceIter.return);
+						expect(await sliceIter.return()).toEqual({ value: undefined, done: true });
+						expect(await sliceIter.next()).toEqual({ value: undefined, done: true });
 						assertReturnedThrown(data, 1, 0);
 					});
 				}

@@ -35,12 +35,12 @@ describe('.find()', () => {
 						assertReturnedThrown(data, 0, 1);
 					});
 
-					// it('should return the first item that satisfies the async callback', async () => {
-					// 	const data = testData.syncData!();
-					// 	const iter = new ExtendedIterable<number>(data);
-					// 	expect(await iter.find(async item => item === 2)).toEqual(2);
-					// 	assertReturnedThrown(data, 1, 0);
-					// });
+					it('should return the first item that satisfies the async callback', async () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						expect(await iter.find(async item => item === 2)).toEqual(2);
+						assertReturnedThrown(data, 1, 0);
+					});
 
 					it('should propagate an error from the callback', () => {
 						const data = testData.syncData!();

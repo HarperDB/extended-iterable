@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { ExtendedIterable } from '../src/extended-iterable.js';
 import { assertReturnedThrown, dataMatrix, hasAsyncTestData, hasSyncTestData } from './lib/util.js';
 
@@ -49,6 +49,17 @@ describe('.take()', () => {
 						const iter = new ExtendedIterable(data);
 						expect(() => iter.take(-1)).toThrowError(new RangeError('Limit must be a positive number'));
 						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should end iterator on return()', () => {
+						const data = testData.syncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const takeIter = iter.take(2)[Symbol.iterator]();
+						expect(takeIter.next()).toEqual({ done: false, value: 1 });
+						assert(takeIter.return);
+						expect(takeIter.return()).toEqual({ value: undefined, done: true });
+						expect(takeIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 
@@ -114,6 +125,17 @@ describe('.take()', () => {
 						expect(await takeIter.next()).toEqual({ done: false, value: 4 });
 						expect(await takeIter.next()).toEqual({ done: true, value: undefined });
 						assertReturnedThrown(data, 0, 0);
+					});
+
+					it('should end async iterator on return()', async () => {
+						const data = testData.asyncData!();
+						const iter = new ExtendedIterable<number>(data);
+						const takeIter = iter.take(2)[Symbol.asyncIterator]();
+						expect(await takeIter.next()).toEqual({ done: false, value: 1 });
+						assert(takeIter.return);
+						expect(await takeIter.return()).toEqual({ value: undefined, done: true });
+						expect(await takeIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 1, 0);
 					});
 				}
 

@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class SliceIterator<T> extends BaseIterator<T> {
 	#index = 0;
@@ -35,6 +35,10 @@ export class SliceIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		// check if we can return early
 		if (this.#endIndex !== undefined && this.#startIndex >= this.#endIndex) {
 			return super.return();
@@ -91,9 +95,6 @@ export class SliceIterator<T> extends BaseIterator<T> {
 		// if iterator is done or we've reached the end index, return done
 		if (currentResult.done) {
 			return currentResult;
-		}
-		if (this.#endIndex !== undefined && this.#index >= this.#endIndex) {
-			return super.return();
 		}
 
 		// process the current result

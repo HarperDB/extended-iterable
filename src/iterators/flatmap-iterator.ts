@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class FlatMapIterator<T, U> extends BaseIterator<T> {
 	#index = 0;
@@ -17,6 +17,10 @@ export class FlatMapIterator<T, U> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		// try to get value from current sub-iterator first
 		if (this.#currentSubIterator) {
 			const subResult = this.#currentSubIterator.next();

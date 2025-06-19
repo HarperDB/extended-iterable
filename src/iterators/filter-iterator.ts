@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 
 export class FilterIterator<T> extends BaseIterator<T> {
 	#index = 0;
@@ -18,6 +18,10 @@ export class FilterIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		try {
 			let result = super.next();
 

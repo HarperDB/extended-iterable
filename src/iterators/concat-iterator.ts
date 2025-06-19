@@ -1,4 +1,4 @@
-import { BaseIterator } from './base-iterator.js';
+import { BaseIterator, DONE } from './base-iterator.js';
 import { resolveIterator } from './resolve-iterator.js';
 import type { IterableLike } from '../types.js';
 
@@ -19,6 +19,10 @@ export class ConcatIterator<T> extends BaseIterator<T> {
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
+		if (this.finished) {
+			return DONE;
+		}
+
 		// iterate through the original iterator first
 		if (!this.#firstIteratorDone) {
 			let result: IteratorResult<T> | Promise<IteratorResult<T>>;
@@ -42,6 +46,16 @@ export class ConcatIterator<T> extends BaseIterator<T> {
 
 		// then iterate through the second iterator
 		return this.#getNextFromOther();
+	}
+
+	return(): IteratorResult<T> | Promise<IteratorResult<T>> {
+		if (this.#secondIterator?.return) {
+			const result = this.#secondIterator.return();
+			if (result instanceof Promise) {
+				return result.then(() => super.return());
+			}
+		}
+		return super.return();
 	}
 
 	#processFirstResult(result: IteratorResult<T>): IteratorResult<T> | Promise<IteratorResult<T>> {
