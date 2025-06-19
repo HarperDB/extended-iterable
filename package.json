@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "exports": "./dist/extended-iterable.js",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/extended-iterable.d.ts",
   "files": [
     "dist"
   ],
