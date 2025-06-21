@@ -1,7 +1,7 @@
 import { BaseIterator, DONE } from './base-iterator.js';
 
 export class DropIterator<T> extends BaseIterator<T> {
-	#count!: number;
+	#count: number;
 	#doneSkipping = false;
 	#itemsDropped = 0;
 
@@ -11,14 +11,14 @@ export class DropIterator<T> extends BaseIterator<T> {
 	) {
 		super(iterator);
 
+		this.#count = count;
+
 		if (typeof count !== 'number') {
 			super.throw(new TypeError('Count is not a number'));
 		}
 		if (count < 0) {
 			super.throw(new RangeError('Count must be a positive number'));
 		}
-
-		this.#count = count;
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {

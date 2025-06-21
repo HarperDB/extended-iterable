@@ -2,7 +2,7 @@ import { BaseIterator, DONE } from './base-iterator.js';
 
 export class TakeIterator<T> extends BaseIterator<T> {
 	#count = 0;
-	#limit!: number;
+	#limit: number;
 
 	constructor(
 		limit: number,
@@ -10,14 +10,14 @@ export class TakeIterator<T> extends BaseIterator<T> {
 	) {
 		super(iterator);
 
+		this.#limit = limit;
+
 		if (typeof limit !== 'number') {
 			super.throw(new TypeError('Limit is not a number'));
 		}
 		if (limit < 0) {
 			super.throw(new RangeError('Limit must be a positive number'));
 		}
-
-		this.#limit = limit;
 	}
 
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
