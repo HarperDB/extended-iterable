@@ -238,7 +238,7 @@ Returns `true` if the callback returns `true` for every item of the iterable.
 
 ##### Parameters
 
-* `callback` - `(value: T, index: number) => boolean | Promise<boolean>` - The
+* `callback: (value: T, index: number) => boolean | Promise<boolean>` - The
   callback function to call for each result.
 
 ##### Return value
@@ -267,7 +267,7 @@ returns `true`.
 
 ##### Parameters
 
-* `callback` - `(value: T, index: number) => boolean | Promise<boolean>` - The
+* `callback: (value: T, index: number) => boolean | Promise<boolean>` - The
   callback function to call for each result.
 
 ##### Return value
