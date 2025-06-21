@@ -22,7 +22,6 @@ iteration, and support for sync and async callbacks.
     * [`slice()`](#slicestart-end)
     * [`some()`](#somecallback)
     * [`take()`](#takelimit)
-  * [`ExtendedIterable.from()`](#extendediterablefromiterator)
 * [Types](#types)
 * [License](#license)
 
@@ -140,7 +139,7 @@ The `ExtendedIterable` is a generic class and the data type can be explicitly
 specified:
 
 ```typescript
-new ExtendedIterable<number>([1, 2, 3]);
+new ExtendedIterable([1, 2, 3]);
 ```
 
 ### Methods
