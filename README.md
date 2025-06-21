@@ -219,13 +219,11 @@ Returns a new iterable skipping the first `count` items.
 
 ##### Parameters
 
-* `count: number` -
-  The number of items to skip.
+* `count: number` - The number of items to skip.
 
 ##### Return value
 
-* `ExtendedIterable<T>` -
-  The new iterable.
+* `ExtendedIterable<T>` - The new iterable.
 
 ##### Example
 
