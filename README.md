@@ -524,8 +524,6 @@ type IterableLike<T> =
 	| (() => AsyncGenerator<T>);
 ```
 
-This type
-
 ## License
 
 This library is licensed under the terms of the MIT license.
