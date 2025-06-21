@@ -296,8 +296,8 @@ Returns the first item of the iterable for which the callback returns `true`.
 ##### Return value
 
 * `T | Promise<T> | undefined | Promise<undefined>` - The first item of the
-  iterable for which the callback returns  `true`, or `undefined` if no such
-  item is found.
+  iterable for which the callback returns or resolves `true`, or `undefined` if
+  no such item is found.
 
 ##### Example
 
