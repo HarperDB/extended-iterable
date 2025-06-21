@@ -184,7 +184,7 @@ export class ExtendedIterable<T> {
 		while (!result.done) {
 			if (currentIndex === index) {
 				if (iterator.return) {
-					return (iterator.return(result.value) as IteratorReturnResult<T>).value;
+					return iterator.return(result.value).value;
 				}
 				return result.value;
 			}
