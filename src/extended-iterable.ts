@@ -128,12 +128,12 @@ export class ExtendedIterable<T> {
 			return array;
 		} catch (err) {
 			if (iterator.throw) {
-                const throwResult = iterator.throw(err);
-                if (throwResult instanceof Promise) {
-                    return throwResult.then(() => { throw err; });
-                }
-            }
-            throw err;
+				const throwResult = iterator.throw(err);
+				if (throwResult instanceof Promise) {
+					return throwResult.then(() => { throw err; });
+				}
+			}
+			throw err;
 		}
 	}
 
