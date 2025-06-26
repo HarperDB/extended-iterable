@@ -910,6 +910,22 @@ export class ExtendedIterable<T> {
 			new TakeIterator(limit, this.#iterator)
 		);
 	}
+
+	/**
+	 * Returns the iterator results as an array.
+	 *
+	 * @returns The iterator results as an array.
+	 *
+	 * @example
+	 * ```typescript
+	 * const iterator = new ExtendedIterable([1, 2, 3]);
+	 * const array = iterator.toArray();
+	 * console.log(array); // [1, 2, 3]
+	 * ```
+	 */
+	toArray(): T[] | Promise<T[]> {
+		return this.asArray;
+	}
 }
 
 export default ExtendedIterable;

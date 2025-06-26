@@ -28,11 +28,6 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 				return result;
 			}
 
-			// rethrow errors to let the catch callback handle them
-			if (result.value instanceof Error) {
-				throw result.value;
-			}
-
 			return {
 				done: false,
 				value: result.value
@@ -66,11 +61,6 @@ export class MapErrorIterator<T> extends BaseIterator<T> {
 
 			if (currentResult.done) {
 				return currentResult as IteratorResult<T | Error>;
-			}
-
-			// rethrow errors to let the catch callback handle them
-			if (currentResult.value instanceof Error) {
-				throw currentResult.value;
 			}
 
 			return {
