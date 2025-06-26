@@ -22,6 +22,7 @@ iteration, and support for sync and async callbacks.
     * [`slice()`](#slicestart-end)
     * [`some()`](#somecallback)
     * [`take()`](#takelimit)
+    * [`toArray()`](#toarray)
 * [Types](#types)
 * [License](#license)
 
@@ -506,6 +507,32 @@ resolves an array.
 ```typescript
 const arr = ExtendedIterable.from(new Set([1, 2, 3]));
 console.log(arr); // [1, 2, 3]
+```
+
+#### `.toArray()`
+
+##### Return value
+
+* `Array<T>` | `Promise<Array<T>>` - An array or a promise that resolves an
+  array.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const arr = iterator.toArray();
+```
+
+If the iterator is async or any array-like functions have an async callback,
+it will return a promise.
+
+```typescript
+const iter = new ExtendedIterable(async function* () {
+	yield 1;
+	yield 2;
+	yield 3;
+});
+const arr = await iter.map(async value => value).toArray();
 ```
 
 ## Types
