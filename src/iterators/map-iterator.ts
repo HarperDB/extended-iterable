@@ -17,6 +17,22 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 		this.#callback = callback;
 	}
 
+	#handleError(err: unknown) {
+		const result = super.throw(err);
+		if (result instanceof Promise) {
+			return result.then(result => {
+				if (result?.done) {
+					return result;
+				}
+				throw result?.value ?? err;
+			});
+		}
+		if (result?.done) {
+			return result;
+		}
+		throw result?.value ?? err;
+	}
+
 	next(): IteratorResult<U> | Promise<IteratorResult<U>> | any {
 		if (this.finished) {
 			return DONE;
@@ -28,7 +44,7 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 			// async handling
 			if (result instanceof Promise) {
 				return this.#asyncMap(result)
-					.catch(err => super.throw(err));
+					.catch(err => this.#handleError(err));
 			}
 
 			// sync handling
@@ -43,7 +59,7 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 						done: false,
 						value
 					}))
-					.catch(err => super.throw(err));
+					.catch(err => this.#handleError(err));
 			}
 
 			return {
@@ -51,7 +67,7 @@ export class MapIterator<T, U> extends BaseIterator<T> {
 				value
 			};
 		} catch (err) {
-			return super.throw(err);
+			return this.#handleError(err);
 		}
 	}
 

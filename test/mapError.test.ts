@@ -138,6 +138,40 @@ describe('.mapError()', () => {
 						const iter = new ExtendedIterable<number>(data);
 						expect(() => iter.map(item => item * 2).mapError(123 as any)).toThrowError(new TypeError('Callback is not a function'));
 					});
+
+					it('should return a mapped iterable with an error from first map()', () => {
+						const data = testData.syncData!(false);
+						const iter = new ExtendedIterable<number>(data);
+						const mapErrorIter = iter.map(item => {
+							if (item === 2) {
+								throw new Error('error');
+							}
+							return item * 2;
+						}).map(item => item * 2).mapError()[Symbol.iterator]();
+						expect(mapErrorIter.next()).toEqual({ value: 4, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: new Error('error'), done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 12, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 16, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should return a mapped iterable with an error from second map()', () => {
+						const data = testData.syncData!(false);
+						const iter = new ExtendedIterable<number>(data);
+						const mapErrorIter = iter.map(item => item * 2).map(item => {
+							if (item === 4) {
+								throw new Error('error');
+							}
+							return item * 2;
+						}).mapError()[Symbol.iterator]();
+						expect(mapErrorIter.next()).toEqual({ value: 4, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: new Error('error'), done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 12, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: 16, done: false });
+						expect(mapErrorIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 0, 0);
+					});
 				}
 
 				if (testData.syncEmptyData) {
@@ -286,6 +320,40 @@ describe('.mapError()', () => {
 						expect(await mapErrorIter.next()).toEqual({ value: 4, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 6, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: 8, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 0, 0);
+					});
+
+					it('should return a mapped async iterable with an error from first map()', async () => {
+						const data = testData.asyncData!(false);
+						const iter = new ExtendedIterable<number>(data);
+						const mapErrorIter = iter.map(item => {
+							if (item === 2) {
+								throw new Error('error');
+							}
+							return item * 2;
+						}).map(item => item * 2).mapError()[Symbol.iterator]();
+						expect(await mapErrorIter.next()).toEqual({ value: 4, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: new Error('error'), done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: 12, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: 16, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
+						assertReturnedThrown(data, 0, 1);
+					});
+
+					it('should return a mapped async iterable with an error from second map()', async () => {
+						const data = testData.asyncData!(false);
+						const iter = new ExtendedIterable<number>(data);
+						const mapErrorIter = iter.map(item => item * 2).map(item => {
+							if (item === 4) {
+								throw new Error('error');
+							}
+							return item * 2;
+						}).mapError()[Symbol.iterator]();
+						expect(await mapErrorIter.next()).toEqual({ value: 4, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: new Error('error'), done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: 12, done: false });
+						expect(await mapErrorIter.next()).toEqual({ value: 16, done: false });
 						expect(await mapErrorIter.next()).toEqual({ value: undefined, done: true });
 						assertReturnedThrown(data, 0, 0);
 					});
