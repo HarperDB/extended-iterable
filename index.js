@@ -369,6 +369,9 @@ export class ExtendedIterable {
 		return iterable;
 	}
 	mapError(catch_callback) {
+		if (typeof catch_callback !== 'function') {
+			throw new TypeError('Expected catch callback to be a function');
+		}
 		let iterable = this.map((element) => {
 			return element;
 		});
