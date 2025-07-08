@@ -1,95 +1,556 @@
 [![license](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/extended-iterable.svg?style=flat-square)](https://www.npmjs.org/package/extended-iterable)
-[![npm downloads](https://img.shields.io/npm/dw/extended-iterable)](https://www.npmjs.org/package/extended-iterable)
+[![npm version](https://img.shields.io/npm/v/@harperdb/extended-iterable.svg?style=flat-square)](https://www.npmjs.org/package/@harperdb/extended-iterable)
+[![npm downloads](https://img.shields.io/npm/dw/@harperdb/extended-iterable)](https://www.npmjs.org/package/@harperdb/extended-iterable)
 
-The extended-iterable package provides a class that implements the Iterable/Iterator protocol and provides array-like methods
-with lazy evaluation, similar to [iterators helpers](https://github.com/tc39/proposal-iterator-helpers). However,
-extended-iterable provides additional methods, the ability to handle both sync and async iteration, automatic handling of
-asynchronous callbacks, and return/throw forwarding which can be critical for proper cleanup when used with
-database transactions.
+An iterable with array-like methods with lazy evaluation, both sync and async
+iteration, and support for sync and async callbacks.
 
-The package exports a single `ExtendedIterable` class, which can be constructed with a basic iterable or can be constructed
-with no arguments and assigned (or overridden with) an `iterate` method that returns an iterator.
+* [Example](#Example)
+* [API](#api)
+  * [`new ExtendedIterable()`](#new-extendediterableiterator)
+    * [`asArray`](#asarray)
+    * [`at()`](#atindex)
+    * [`concat()`](#concatother)
+    * [`drop()`](#dropcount)
+    * [`every()`](#everycallback)
+    * [`filter()`](#filtercallback)
+    * [`find()`](#findcallback)
+    * [`flatMap()`](#flatmapucallback)
+    * [`map()`](#mapcallback)
+    * [`mapError()`](#maperrorcatchcallback)
+    * [`reduce()`](#reduceucallback-initialvalue)
+    * [`slice()`](#slicestart-end)
+    * [`some()`](#somecallback)
+    * [`take()`](#takelimit)
+    * [`toArray()`](#toarray)
+* [Types](#types)
+* [License](#license)
 
-For example, we can create an `ExtendedIterable`:
-```javascript
-import { ExtendedIterable } from '@harperdb/extended-iterable';
+# Example
 
-function performQuery() {
-	let results = new ExtendedIterable();
-	results.iterate = function() {
-		let txn = startTxn(); // we can start a transaction in some database, and be notified of when the iterable is completed below
-		let cursor = txn.doQuery();
-		return {
-			// implement an iterator
-			next() {
-				// iterate through a query or table
-				let entry = cursor.getNext();
-				if (entry)
-					return { value: entry };
-				else
-					return { done: true };
-            },
-			return () { // called when the iterator is done
-				txn.commit();
-            },
-			throw () {
-				txn.abort();
-            }
-        }
-    };
-	return results;
+`ExtendedIterable` accepts any iterator, iterable, or generator:
+
+```typescript
+import ExtendedIterable from 'extended-iterable';
+
+const extendedIterable = new ExtendedIterable([1, 2, 3]);
+for (const value of extendedIterable) {
+	console.log(value);
 }
 ```
 
+You can chain methods together:
 
-The returned `ExtendedIterable` is fully iterable: 
-
-```js
-let extendedIterable = performQuery();
-for (let value of extendedIterable) {
-	// for each value
+```typescript
+const listing = fs.readdirSync('.', { withFileTypes: true });
+const directories = new ExtendedIterable(listing)
+	.filter(file => file.isDirectory())
+	.map(file => file.name);
+for (const dir of directories) {
+	console.log(dir);
 }
 ```
 
-Or we can use the provided iterative methods on the returned results:
+To convert the results to an array:
 
-```js
-extendedIterable
-	.filter((value) => test(value))
-	.forEach((value) => {
-		// for each value that matched the filter
+```typescript
+// sync only
+const arr = Array.from(extendedIterable);
+
+// both sync and async
+const arr2 = await extendedIterable.asArray;
+```
+
+An async iterator with an async callback:
+
+```typescript
+import { readdir, readFile } from 'node:fs/promises';
+
+async function* getDirectoryListing() {
+	const entries = await readdir('.', { withFileTypes: true });
+	for (const entry of entries) {
+		yield entry;
+	}
+}
+
+const sourceFiles = new ExtendedIterable(getDirectoryListing)
+	.filter(file => file.isFile() && file.name.endsWith('.js'))
+	.map(async file => ({
+		name: file.name,
+		contents: await readFile(file.name, 'utf-8')
+	}));
+for await (const src of sourceFiles) {
+	console.log(`${src.name} is ${src.contents.length} bytes`);
+}
+```
+
+## API
+
+### Constuctor
+
+#### `new ExtendedIterable<T>(iterator)`
+
+Creates an iterable from an array-like object, iterator, async iterator,
+iterable, generator, or async generator.
+
+##### Parameters
+
+* `iterator`: [`IterableLike<T>`](#iterablelike) - An array-like object,
+  iterator, async iterator, iterable, generator or async generator.
+
+##### Example
+
+```typescript
+// array
+new ExtendedIterable([1, 2, 3])
+
+// string
+new ExtendedIterable('Hello World!');
+
+// Set
+new ExtendedIterable(new Set([1, 2, 3]));
+
+// iterable object
+new ExtendedIterable({
+	index: 0,
+	next() {
+		if (this.index > 3) {
+			return { done: true, value: undefined };
+		}
+		return { done: false, value: this.index++ };
+	}
+});
+
+// generator
+new ExtendedIterable(function* () {
+	yield 1;
+	yield 2;
+	yield 3;
+});
+
+// async generator
+new ExtendedIterable(async function* () {
+	yield 1;
+	yield 2;
+	yield 3;
+});
+```
+
+The `ExtendedIterable` is a generic class and the data type can be explicitly
+specified:
+
+```typescript
+new ExtendedIterable([1, 2, 3]);
+```
+
+### Methods
+
+#### `.asArray`
+
+##### Return value
+
+* `Array<T>` | `Promise<Array<T>>` - An array or a promise that resolves an
+  array.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const arr = iterator.asArray;
+```
+
+If the iterator is async or any array-like functions have an async callback,
+it will return a promise.
+
+```typescript
+const iter = new ExtendedIterable(async function* () {
+	yield 1;
+	yield 2;
+	yield 3;
+});
+const arr = await iter.map(async value => value).asArray;
+```
+
+#### `.at(index)`
+
+Returns the item or a promise that resolves an item at the given index. If the
+index is less than 0, an error is thrown. If the index is greater than the
+number of items in the iterator, `undefined` is returned.
+
+##### Parameters
+
+* `index`: `number` - The index of the item to return.
+
+##### Return value
+
+* `T | Promise<T> | undefined | Promise<undefined>` - The item at the
+  specified index. Value
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const value = iterator.at(2); // 3
+```
+
+#### `.concat(other)`
+
+Concatenates the iterable with another iterable.
+
+##### Parameters
+
+* `iterator`: [`IterableLike<T>`](#iterablelike) - An array-like object,
+  iterator, async iterator, iterable, generator or async generator.
+
+##### Return value
+
+* `ExtendedIterable<T>` The concatenated iterable.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const concatenated = iterator.concat([4, 5, 6]);
+console.log(concatenated.asArray); // [1, 2, 3, 4, 5, 6]
+```
+
+#### `.drop(count)`
+
+Returns a new iterable skipping the first `count` items.
+
+##### Parameters
+
+* `count: number` - The number of items to skip.
+
+##### Return value
+
+* `ExtendedIterable<T>` - The new iterable.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3, 4]).drop(2);
+console.log(iterator.asArray); // [3, 4]
+```
+
+#### `.every(callback)`
+
+Returns `true` if the callback returns `true` for every item of the iterable.
+
+##### Parameters
+
+* `callback: (value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `boolean | Promise<boolean>` - Returns or resolves `true` if the callback
+  returns `true` for every item of the iterable.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const isAllValid = iterator.every(item => item > 0);
+```
+
+Async callbacks are supported, but you must await the iterator:
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const isAllValid = await iterator.every(async item => item > 0);
+```
+
+#### `.filter(callback)`
+
+Returns a new iterable containing only the values for which the callback
+returns `true`.
+
+##### Parameters
+
+* `callback: (value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `ExtendedIterable<T>` - The new iterable.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const evenIterator = iterator.filter((item) => {
+	return item % 2 === 0;
+});
+console.log(evenIterator.asArray); // [2]
+```
+
+#### `.find(callback)`
+
+Returns the first item of the iterable for which the callback returns `true`.
+
+##### Parameters
+
+* `callback`: `(value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `T | Promise<T> | undefined | Promise<undefined>` - The first item of the
+  iterable for which the callback returns or resolves `true`, or `undefined` if
+  no such item is found.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const found = iterator.find(item => item === 2);
+```
+
+#### `.flatMap<U>(callback)`
+
+Returns a new iterable with the flattened results of a callback function.
+
+##### Parameters
+
+* `callback`: `(value: T, index: number) => U | U[] | Iterable<U> | Promise<U | U[] | Iterable<U>>` -
+  The callback function to call for each result.
+
+##### Return value
+
+* `ExtendedIterable<U>` - The new iterable with the values flattened.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const flattened = iterator.flatMap(item => [item, item]);
+console.log(flattened.asArray); // [1, 1, 2, 2, 3, 3]
+```
+
+#### `.forEach(callback)`
+
+Calls a function for each item of the iterable.
+
+##### Parameters
+
+* `callback`: `(value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `void | Promise<void>` - Returns nothing or a promise that resolves nothing.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+iterator.forEach(item => console.log(item)); // 1, 2, 3
+```
+
+#### `.map(callback)`
+
+Returns a new iterable with the results of calling a callback function.
+
+##### Parameters
+
+* `callback`: `(value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `ExtendedIterable<T>` - The new iterable with the mapped values.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const mapped = iterator.map(item => item * 2);
+console.log(mapped.asArray); // [2, 4, 6]
+```
+
+#### `.mapError(catchCallback)`
+
+Catch errors thrown during iteration and allow iteration to continue. This
+method is most useful for methods that return an iterable such as `drop()`,
+`filter()`, `flatMap()`, `map()`, `reduce()`, and `take()`.
+
+##### Parameters
+
+* `catchCallback`: `(error: Error) => Error | Promise<Error>` - The callback to
+  handle errors. The returned error is logged/handled but iteration continues.
+
+##### Return value
+
+* `ExtendedIterable<T | Error>` - The new iterable.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const mapped = iterator
+	.map(item => {
+		if (item % 2 === 0) {
+			throw new Error('Even');
+		}
+		return 'odd';
 	})
+	.mapError();
+console.log(mapped.asArray); // ['odd', Error('Even'), 'odd']
 ```
 
-Note that `map` and `filter` are also lazy, they will only be executed once their returned iterable is iterated or `forEach` is called on it. The `map` and `filter` functions also support async/promise-based functions, and you can create an async iterable if the callback functions execute asynchronously (return a promise).
+#### `.reduce<U>(callback, [initialValue])`
 
-We can also query with offset to skip a certain number of entries, and limit the number of entries to iterate through:
+Reduces the iterable to a single value.
 
-```js
-let sliced = extendedIterable.slice(10, 20); // skip first 10 and get next 10
+##### Parameters
+
+* `callback`: `(previousValue: U, currentValue: T, currentIndex: number) => U | Promise<U>` -
+  The callback function to call for each result.
+* `initialValue`: `U` [optional] - The initial value to use for the accumulator.
+
+##### Return value
+
+* `U | Promise<U>` - Returns or resolves the reduced value.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const sum = iterator.reduce((acc, item) => acc + item, 0);
+console.log(sum); // 6
 ```
 
-If you want to get a true array from the results, the `asArray` property will return the results as an array.
+#### `.slice([start, [end]])`
 
-### Catching Errors in iteration
-With an array, `map` and `filter` callbacks are immediately executed, but wit iterators, they are executed during iteration, so if an error occurs during iteration, the error will be thrown when the iteration is attempted. It is also critical that when an iteration is finished, the cursor is closed, so by default, if an error occurs during iteration, the cursor will immediately be closed. However, if you want to catch errors that occur in `map` (and `flatMap`) callbacks during iteration, you can use the `mapError` method to catch errors that occur during iteration, and allow iteration to continue (without closing the cursor). For example:
+Returns a new iterable with the items between the start and end indices. If
+`start` or `end` are less than zero, an error is thrown. If `start` is greater
+than `end`, an empty iterator is returned.
 
-```js 
-let mapped = extendedIterable.map(({ key, value }) => {
-	return thisMightThrowError(value);
-}).mapError((error) => {
-    // rather than letting the error terminate the iteration, we can catch it here and return a value to continue iterating:
-    return 'error occurred';
-})
-for (let entry of mapped) {
-...
-}
+##### Parameters
+
+* `start`: `number | undefined` [optional] - The index to start at. Defaults to
+  `0`, the first item.
+* `end`: `number | undefined` [optional] - The index to end at. Defaults to the
+  last item.
+
+##### Return value
+
+* `ExtendedIterable<T>` - The new iterable with the sliced range.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3, 4, 5]);
+const sliced = iterator.slice(2, 4);
+console.log(sliced.asArray); // [3, 4]
 ```
-A `mapError` callback can return a value to continue iterating, or throw an error to terminate the iteration.
+
+#### `.some(callback)`
+
+Returns `true` if the callback returns `true` for any item of the iterable.
+
+##### Parameters
+
+* `callback`: `(value: T, index: number) => boolean | Promise<boolean>` - The
+  callback function to call for each result.
+
+##### Return value
+
+* `boolean | Promise<boolean>` - `true` if the callback returns `true` for any
+  item of the iterable, `false` otherwise.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const hasEven = iterator.some(item => item % 2 === 0);
+console.log(hasEven); // true
+```
+
+#### `.take(limit)`
+
+Returns a new iterable with the first `limit` items. If `limit` is less than
+zero, an error is thrown. If the limit is greater than the number of items in
+the iterable, all items are returned.
+
+##### Parameters
+
+* `limit`: `number` - The number of items to take.
+
+##### Return value
+
+* `ExtendedIterable<T>` - The new iterable with the first `limit` items.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const taken = iterator.take(2);
+console.log(taken.asArray); // [1, 2]
+```
+
+#### `ExtendedIterable.from(iterator)`
+
+A static method for convenience that returns an array or a promise that
+resolves an array.
+
+##### Parameters
+
+* `iterator`: [`IterableLike<T>`](#iterablelike) - An array-like object,
+  iterator, async iterator, iterable, generator or async generator.
+
+##### Return value
+
+* `Array<T> | Promise<Array<T>>` - An array of all items in the iterator.
+
+```typescript
+const arr = ExtendedIterable.from(new Set([1, 2, 3]));
+console.log(arr); // [1, 2, 3]
+```
+
+#### `.toArray()`
+
+##### Return value
+
+* `Array<T>` | `Promise<Array<T>>` - An array or a promise that resolves an
+  array.
+
+##### Example
+
+```typescript
+const iterator = new ExtendedIterable([1, 2, 3]);
+const arr = iterator.toArray();
+```
+
+If the iterator is async or any array-like functions have an async callback,
+it will return a promise.
+
+```typescript
+const iter = new ExtendedIterable(async function* () {
+	yield 1;
+	yield 2;
+	yield 3;
+});
+const arr = await iter.map(async value => value).toArray();
+```
+
+## Types
+
+### `IterableLike`
+
+Anything that can be iterated. This includes types such as `Map` and `Set` as
+well as plain strings.
+
+```typescript
+type IterableLike<T> =
+	| Iterator<T>
+	| AsyncIterator<T>
+	| Iterable<T>
+	| (() => Generator<T>)
+	| (() => AsyncGenerator<T>);
+```
 
 ## License
 
 This library is licensed under the terms of the MIT license.
-
-## Related Projects
