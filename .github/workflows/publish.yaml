@@ -21,6 +21,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Get version from package.json
+        id: get-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Publish to npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -34,20 +38,20 @@ jobs:
           payload: |
             {
               "channel": "${{ secrets.SLACK_CHANNEL_ID }}",
-              "text": "New extended-iterable release: v${{ needs.check.outputs.version }}",
+              "text": "New extended-iterable release: v${{ steps.get-version.outputs.version }}",
               "blocks": [
                 {
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "New extended-iterable release: v${{ needs.check.outputs.version }}"
+                    "text": "New extended-iterable release: v${{ steps.get-version.outputs.version }}"
                   }
                 },
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "https://github.com/harperdb/rocksdb-prebuilds/releases/tag/v${{ needs.check.outputs.version }}"
+                    "text": "https://github.com/harperdb/rocksdb-prebuilds/releases/tag/v${{ steps.get-version.outputs.version }}"
                   }
                 }
               ]
