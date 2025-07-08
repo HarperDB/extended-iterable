@@ -1,19 +1,23 @@
 {
   "name": "@harperdb/extended-iterable",
-  "author": "Kris Zyp",
-  "version": "1.0.0",
+  "author": "Harper",
+  "version": "1.0.1",
   "description": "Extended iterable class, providing lazy array-like methods with automatic async and return/throw forwarding",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/kriszyp/extended-iterable.git"
+    "url": "git+ssh://git@github.com/harperdb/extended-iterable.git"
   },
   "keywords": [
     "iterable",
     "lazy"
   ],
   "type": "module",
-  "module": "ExtendedIterable.js",
-  "exports": "ExtendedIterable.js",
-  "types": "./index.d.ts"
+  "module": "./index.js",
+  "exports": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "./index.js",
+    "./index.d.ts"
+  ]
 }
