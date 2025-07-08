@@ -17,6 +17,22 @@ export class BaseIterator<T> implements Iterator<T>, AsyncIterator<T> {
 		}
 	}
 
+	handleError(err: unknown) {
+		const result = this.throw(err);
+		if (result instanceof Promise) {
+			return result.then(result => {
+				if (result?.done) {
+					return result;
+				}
+				throw result?.value ?? err;
+			});
+		}
+		if (result?.done) {
+			return result;
+		}
+		throw result?.value ?? err;
+	}
+
 	next(): IteratorResult<T> | Promise<IteratorResult<T>> | any {
 		return this.iterator.next();
 	}
