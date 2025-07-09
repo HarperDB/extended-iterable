@@ -1,4 +1,5 @@
 export class ExtendedIterable<T> implements Iterable<T> {
+	concat(secondIterable: Iterable<T>): ExtendedIterable<T>;
 	new(sourceArray: Iterable<T>): ExtendedIterable<T>;
 	map<U>(callback: (entry: T, index: number) => U): ExtendedIterable<U>
 	flatMap<U>(callback: (entry: T, index: number) => U[]): ExtendedIterable<U>
